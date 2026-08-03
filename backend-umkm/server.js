@@ -17,10 +17,10 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// 1. Sajikan folder 'uploads' secara publik agar gambar bisa diakses frontend
+// 1. Sajikan folder 'uploads' secara publik
 app.use('/uploads', express.static(uploadDir));
 
-// 2. Konfigurasi Multer untuk penyimpanan gambar
+// 2. Konfigurasi Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
@@ -33,7 +33,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // Batas ukuran 5MB
+  limits: { fileSize: 5 * 1024 * 1024 }, // Max 5MB per file
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -43,12 +43,18 @@ const upload = multer({
   }
 });
 
-// Koneksi ke MongoDB Atlas via Mongoose
+// Middleware Upload Banyak Field: 1 Foto Utama + Max 8 Foto Galeri/Produk
+const uploadFields = upload.fields([
+  { name: 'gambar', maxCount: 1 },
+  { name: 'galeri', maxCount: 8 }
+]);
+
+// Koneksi ke MongoDB Atlas
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ Terhubung ke MongoDB Atlas!'))
   .catch((err) => console.error('❌ Gagal Koneksi MongoDB:', err));
 
-// Schema Data UMKM
+// Schema Data UMKM (Ditambahkan Field 'galeri')
 const umkmSchema = new mongoose.Schema({
   namaUsaha: String,
   pemilik: String,
@@ -62,7 +68,8 @@ const umkmSchema = new mongoose.Schema({
   rw: String,
   kontak: String,
   deskripsi: String,
-  gambar: String, // Menyimpan URL relatif (contoh: '/uploads/1723456789.jpg')
+  gambar: String,         // Path Foto Utama
+  galeri: [String],       // Array Path Foto Produk / Makanan / Soto
   jamOperasional: String,
   produkUnggulan: [String],
   tahunBerdiri: String,
@@ -84,12 +91,12 @@ app.get('/api/umkm', async (req, res) => {
   }
 });
 
-// 2. POST: Tambah UMKM Baru (Dengan Upload Gambar)
-app.post('/api/umkm', upload.single('gambar'), async (req, res) => {
+// 2. POST: Tambah UMKM Baru (Foto Utama + Galeri Foto)
+app.post('/api/umkm', uploadFields, async (req, res) => {
   try {
     const payload = { ...req.body };
 
-    // Parsing produkUnggulan jika dikirim sebagai string JSON dari FormData
+    // Parsing produkUnggulan jika dikirim sebagai string JSON
     if (typeof payload.produkUnggulan === 'string') {
       try {
         payload.produkUnggulan = JSON.parse(payload.produkUnggulan);
@@ -98,9 +105,14 @@ app.post('/api/umkm', upload.single('gambar'), async (req, res) => {
       }
     }
 
-    // Simpan path file gambar jika diunggah
-    if (req.file) {
-      payload.gambar = `/uploads/${req.file.filename}`;
+    // Process Foto Utama
+    if (req.files && req.files['gambar']) {
+      payload.gambar = `/uploads/${req.files['gambar'][0].filename}`;
+    }
+
+    // Process Galeri Foto Produk (Soto, Menu, Dll)
+    if (req.files && req.files['galeri']) {
+      payload.galeri = req.files['galeri'].map(f => `/uploads/${f.filename}`);
     }
 
     const newUmkm = new Umkm(payload);
@@ -111,8 +123,8 @@ app.post('/api/umkm', upload.single('gambar'), async (req, res) => {
   }
 });
 
-// 3. PUT: Edit / Update Data UMKM (Dengan Upload Gambar)
-app.put('/api/umkm/:id', upload.single('gambar'), async (req, res) => {
+// 3. PUT: Edit Data UMKM
+app.put('/api/umkm/:id', uploadFields, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -130,12 +142,16 @@ app.put('/api/umkm/:id', upload.single('gambar'), async (req, res) => {
       }
     }
 
-    // Update path gambar jika ada file baru diunggah
-    if (req.file) {
-      payload.gambar = `/uploads/${req.file.filename}`;
+    // Update Foto Utama jika ada file baru
+    if (req.files && req.files['gambar']) {
+      payload.gambar = `/uploads/${req.files['gambar'][0].filename}`;
     }
 
-    // Opsi { returnDocument: 'after' } digunakan untuk menggantikan { new: true } sesuai standar Mongoose v8+
+    // Update Galeri Foto jika ada file baru
+    if (req.files && req.files['galeri']) {
+      payload.galeri = req.files['galeri'].map(f => `/uploads/${f.filename}`);
+    }
+
     const updatedUmkm = await Umkm.findByIdAndUpdate(id, payload, { returnDocument: 'after' });
 
     if (!updatedUmkm) {
@@ -154,9 +170,7 @@ app.delete('/api/umkm/:id', async (req, res) => {
     const { id } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ 
-        error: 'Format ID tidak valid. Data ini mungkin data dummy lokal lama dan belum ada di MongoDB Atlas.' 
-      });
+      return res.status(400).json({ error: 'Format ID tidak valid untuk MongoDB' });
     }
 
     const deletedUmkm = await Umkm.findByIdAndDelete(id);

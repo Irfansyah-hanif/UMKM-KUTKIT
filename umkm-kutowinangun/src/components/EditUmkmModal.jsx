@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, Save, MapPin, Phone, Upload, Image as ImageIcon } from 'lucide-react';
+import { X, Loader2, Save, MapPin, Phone, Upload, Image as ImageIcon, Images } from 'lucide-react';
 
 export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // State Sampul / Foto Utama
   const [fileGambar, setFileGambar] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+
+  // State Galeri Foto Produk / Soto / Suasana Usaha
+  const [galeriFiles, setGaleriFiles] = useState([]);
+  const [galeriPreviews, setGaleriPreviews] = useState([]);
 
   const [formData, setFormData] = useState({
     namaUsaha: '',
@@ -46,7 +52,7 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
           : editingUmkm.produkUnggulan || ''
       });
 
-      // Preview gambar lama jika ada
+      // Preview Gambar Utama Eksisting
       if (editingUmkm.gambar) {
         const existingImg = editingUmkm.gambar.startsWith('http') 
           ? editingUmkm.gambar 
@@ -55,19 +61,47 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
       } else {
         setImagePreview(null);
       }
+
+      // Preview Galeri Eksisting
+      if (Array.isArray(editingUmkm.galeri) && editingUmkm.galeri.length > 0) {
+        const existingGaleri = editingUmkm.galeri.map(path => 
+          path.startsWith('http') ? path : `http://localhost:5000${path}`
+        );
+        setGaleriPreviews(existingGaleri);
+      } else {
+        setGaleriPreviews([]);
+      }
+
       setFileGambar(null);
+      setGaleriFiles([]);
     }
   }, [editingUmkm]);
 
   if (!editingUmkm) return null;
 
-  // Handler saat file gambar baru dipilih oleh admin
+  // Handler Foto Utama
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setFileGambar(file);
       setImagePreview(URL.createObjectURL(file));
     }
+  };
+
+  // Handler Galeri Foto Produk Baru
+  const handleGaleriChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      setGaleriFiles(prev => [...prev, ...files]);
+      const newPreviews = files.map(file => URL.createObjectURL(file));
+      setGaleriPreviews(prev => [...prev, ...newPreviews]);
+    }
+  };
+
+  // Hapus Pratinjau Foto Galeri
+  const handleRemoveGaleriItem = (index) => {
+    setGaleriFiles(prev => prev.filter((_, i) => i !== index));
+    setGaleriPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
@@ -78,7 +112,6 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
       ? formData.rtRw.split('RW')[1].trim() 
       : formData.rw || '01';
 
-    // 1. Menggunakan FormData agar mendukung pengiriman File + Teks
     const bodyFormData = new FormData();
     bodyFormData.append('namaUsaha', formData.namaUsaha);
     bodyFormData.append('pemilik', formData.pemilik);
@@ -100,13 +133,19 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
       : ['Produk Unggulan'];
     bodyFormData.append('produkUnggulan', JSON.stringify(produkArr));
 
-    // Jika admin mengunggah foto baru
+    // Jika admin mengunggah Foto Utama baru
     if (fileGambar) {
       bodyFormData.append('gambar', fileGambar);
     }
 
+    // Jika admin mengunggah Galeri Foto Produk baru
+    if (galeriFiles.length > 0) {
+      galeriFiles.forEach(file => {
+        bodyFormData.append('galeri', file);
+      });
+    }
+
     try {
-      // Panggil fungsi onEdit dengan ID dan FormData
       await onEdit(editingUmkm._id, bodyFormData);
       setEditingUmkm(null);
     } catch (error) {
@@ -119,11 +158,11 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
 
   return (
     <div className="fixed inset-0 z-50 bg-sky-950/30 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto print:hidden">
-      <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl border border-sky-100 my-8">
+      <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl border border-sky-100 my-8 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between border-b border-sky-100 pb-4">
           <div>
             <h3 className="text-base font-black text-sky-950">Edit Data UMKM</h3>
-            <p className="text-xs text-sky-700 font-medium">Perbarui informasi pelaku usaha</p>
+            <p className="text-xs text-sky-700 font-medium">Perbarui informasi pelaku usaha & foto produk</p>
           </div>
           <button
             onClick={() => setEditingUmkm(null)}
@@ -135,11 +174,11 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           
-          {/* UPLOAD FOTO USAHA BARU */}
+          {/* UPLOAD FOTO USAHA UTAMA */}
           <div>
             <label className="block font-bold text-sky-950 mb-1 flex items-center gap-1">
               <ImageIcon className="w-3.5 h-3.5 text-sky-500" />
-              <span>Foto Usaha / Produk (Ganti Gambar)</span>
+              <span>Foto Usaha Utama (Ganti Gambar Utama)</span>
             </label>
             
             {imagePreview && (
@@ -148,7 +187,10 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
                 {fileGambar && (
                   <button
                     type="button"
-                    onClick={() => { setFileGambar(null); setImagePreview(editingUmkm.gambar ? `http://localhost:5000${editingUmkm.gambar}` : null); }}
+                    onClick={() => { 
+                      setFileGambar(null); 
+                      setImagePreview(editingUmkm.gambar ? `http://localhost:5000${editingUmkm.gambar}` : null); 
+                    }}
                     className="absolute top-2 right-2 bg-rose-500 text-white rounded-full p-1 shadow-md hover:bg-rose-600 cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -161,12 +203,53 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
               <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-sky-200 rounded-2xl cursor-pointer bg-sky-50/30 hover:bg-sky-50 transition-all">
                 <div className="flex flex-col items-center justify-center">
                   <Upload className="w-4 h-4 text-sky-500 mb-1" />
-                  <p className="text-[11px] text-sky-800 font-semibold">Pilih foto baru untuk mengganti</p>
+                  <p className="text-[11px] text-sky-800 font-semibold">Pilih foto utama baru</p>
                 </div>
                 <input 
                   type="file" 
                   accept="image/*" 
                   onChange={handleImageChange} 
+                  className="hidden" 
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* UPLOAD GALERI FOTO PRODUK / SOTO */}
+          <div>
+            <label className="block font-bold text-sky-950 mb-1 flex items-center gap-1">
+              <Images className="w-3.5 h-3.5 text-sky-500" />
+              <span>Galeri Foto Produk / Soto / Suasana Usaha (Bisa Multi File)</span>
+            </label>
+
+            {galeriPreviews.length > 0 && (
+              <div className="grid grid-cols-4 gap-2 mb-2">
+                {galeriPreviews.map((src, idx) => (
+                  <div key={idx} className="relative w-full h-16 rounded-xl overflow-hidden border border-sky-200 group">
+                    <img src={src} alt={`Galeri ${idx + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveGaleriItem(idx)}
+                      className="absolute top-1 right-1 bg-rose-500 text-white rounded-full p-0.5 shadow-md hover:bg-rose-600 cursor-pointer"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex items-center justify-center w-full">
+              <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-sky-200 rounded-2xl cursor-pointer bg-sky-50/30 hover:bg-sky-50 transition-all">
+                <div className="flex flex-col items-center justify-center">
+                  <Upload className="w-4 h-4 text-sky-500 mb-0.5" />
+                  <p className="text-[11px] text-sky-800 font-semibold">Tambah foto galeri produk (Bisa {">"}1 file)</p>
+                </div>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  multiple 
+                  onChange={handleGaleriChange} 
                   className="hidden" 
                 />
               </label>
@@ -225,10 +308,10 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
                 onChange={e => setFormData({ ...formData, kelompokUsaha: e.target.value })}
                 className="w-full px-3.5 py-2.5 bg-sky-50/30 border border-sky-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-300 font-medium"
               >
+                <option value="KULINER">KULINER</option>
                 <option value="PERDAGANGAN">PERDAGANGAN</option>
                 <option value="PRODUKSI/NON PERTANIAN">PRODUKSI/NON PERTANIAN</option>
                 <option value="JASA">JASA</option>
-                <option value="KULINER">KULINER</option>
                 <option value="KONVEKSI">KONVEKSI</option>
               </select>
             </div>

@@ -1,9 +1,16 @@
-import React from 'react';
-import { X, MapPin, Building2, Phone, Trash2, Navigation, Map } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, MapPin, Building2, Phone, Trash2, Navigation, Map, Images } from 'lucide-react';
 
 export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelete }) {
-  // Jika tidak ada data UMKM yang dipilih, jangan tampilkan modal
   if (!selectedUmkm) return null;
+
+  const getImageUrl = (path) => {
+    if (!path) return 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80';
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    return `http://localhost:5000${path}`;
+  };
+
+  const [activeImage, setActiveImage] = useState(getImageUrl(selectedUmkm.gambar));
 
   const handleClose = (e) => {
     if (e) {
@@ -19,43 +26,23 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
     }
   };
 
-  // --- LOGIKA FORMALISASI URL GAMBAR ---
-  const getImageUrl = () => {
-    const rawGambar = selectedUmkm.gambar;
-    if (!rawGambar) {
-      return 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80';
-    }
-    // Jika gambar dikirim dalam format URL absolute (http/https)
-    if (rawGambar.startsWith('http://') || rawGambar.startsWith('https://')) {
-      return rawGambar;
-    }
-    // Jika path relatif (seperti '/uploads/12345.jpg') dari backend Multer
-    return `http://localhost:5000${rawGambar}`;
-  };
-
-  // --- LOGIKA PARSER GOOGLE MAPS ---
+  // Maps URL Generator
   const getMapsUrls = () => {
     const rawInput = (selectedUmkm.linkGmaps || '').trim();
-
-    // 1. Jika Admin menempelkan Kode Embed HTML (<iframe src="...">)
     if (rawInput.includes('<iframe')) {
       const srcMatch = rawInput.match(/src=["']([^"']+)["']/);
       const embedUrl = srcMatch ? srcMatch[1] : '';
       return {
-        embedUrl: embedUrl,
+        embedUrl,
         directUrl: embedUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedUmkm.namaUsaha + ' ' + selectedUmkm.alamat)}`
       };
     }
-
-    // 2. Jika Admin menempelkan Link Share biasa (https://maps.app.goo.gl/... atau https://goo.gl/maps/...)
     if (rawInput.startsWith('http://') || rawInput.startsWith('https://')) {
       return {
         embedUrl: `https://maps.google.com/maps?q=${encodeURIComponent(rawInput)}&output=embed`,
         directUrl: rawInput
       };
     }
-
-    // 3. Fallback Otomatis berdasarkan Nama Usaha + Alamat jika Admin tidak mengisi link
     const fallbackQuery = encodeURIComponent(`${selectedUmkm.namaUsaha} ${selectedUmkm.alamat} Salatiga`);
     return {
       embedUrl: `https://maps.google.com/maps?q=${fallbackQuery}&t=&z=16&ie=UTF8&iwloc=&output=embed`,
@@ -64,6 +51,11 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
   };
 
   const { embedUrl, directUrl } = getMapsUrls();
+
+  // Ambil galeri foto
+  const galeriList = Array.isArray(selectedUmkm.galeri) && selectedUmkm.galeri.length > 0 
+    ? selectedUmkm.galeri 
+    : [selectedUmkm.gambar];
 
   return (
     <div 
@@ -75,10 +67,10 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
         onClick={(e) => e.stopPropagation()}
       >
         
-        {/* Header Gambar Usaha (Mendukung File Upload Backend) */}
-        <div className="relative h-52 sm:h-60 bg-sky-50">
+        {/* Gambar Utama / Preview Foto Pilihan */}
+        <div className="relative h-56 sm:h-64 bg-sky-50">
           <img 
-            src={getImageUrl()} 
+            src={activeImage} 
             alt={selectedUmkm.namaUsaha} 
             loading="lazy"
             decoding="async"
@@ -86,7 +78,7 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
               e.target.onerror = null;
               e.target.src = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80';
             }}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover transition-all duration-300"
           />
           <button
             type="button"
@@ -116,6 +108,33 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
             </p>
           </div>
 
+          {/* GALERI FOTO PRODUK / SOTO / TEMPAT USAHA */}
+          {galeriList.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-xs font-extrabold text-sky-950 uppercase tracking-wider flex items-center gap-1.5">
+                <Images className="w-4 h-4 text-sky-500" />
+                <span>Foto Produk & Suasana Usaha</span>
+              </h4>
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
+                {galeriList.map((imgUrl, index) => {
+                  const fullUrl = getImageUrl(imgUrl);
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => setActiveImage(fullUrl)}
+                      className={`relative w-20 h-20 rounded-xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
+                        activeImage === fullUrl ? 'border-sky-500 scale-95 shadow-md' : 'border-sky-100 opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <img src={fullUrl} alt={`Foto ${index + 1}`} className="w-full h-full object-cover" />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Ringkasan Informasi */}
           <div className="bg-sky-50/60 p-4 rounded-2xl space-y-2 border border-sky-100 text-xs font-medium">
             <div className="flex items-start gap-2 text-sky-900">
@@ -132,7 +151,7 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
             </div>
           </div>
 
-          {/* SECTION TAMPILAN PETA VISUAL DIRECT */}
+          {/* SECTION PETA GOOGLE MAPS */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-extrabold text-sky-950 uppercase tracking-wider flex items-center gap-1.5">
@@ -150,16 +169,12 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
               </a>
             </div>
 
-            {/* PETA VISUAL LANGSUNG */}
-            <div className="w-full h-44 rounded-2xl overflow-hidden border border-sky-200/80 bg-sky-100/50 shadow-inner">
+            <div className="w-full h-40 rounded-2xl overflow-hidden border border-sky-200/80 bg-sky-100/50 shadow-inner">
               <iframe
                 title={`Peta Lokasi ${selectedUmkm.namaUsaha}`}
                 width="100%"
                 height="100%"
                 frameBorder="0"
-                scrolling="no"
-                marginHeight="0"
-                marginWidth="0"
                 src={embedUrl}
                 loading="lazy"
                 className="w-full h-full"
