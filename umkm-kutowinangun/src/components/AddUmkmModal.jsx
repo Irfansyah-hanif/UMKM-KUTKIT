@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { X, Loader2, MapPin, Phone } from 'lucide-react';
+import { X, Loader2, MapPin, Phone, Upload, Image as ImageIcon } from 'lucide-react';
 
 export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fileGambar, setFileGambar] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+
   const [formData, setFormData] = useState({
     namaUsaha: '',
     pemilik: '',
@@ -15,12 +18,20 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
     rtRw: 'RT 01 / RW 01',
     rw: '01',
     kontak: '',
-    linkGmaps: '', // <--- FIELD GOOGLE MAPS
+    linkGmaps: '',
     jamOperasional: '08.00 - 17.00 WIB',
     deskripsi: '',
-    gambar: '',
     produkUnggulanStr: ''
   });
+
+  // Handler saat file gambar dipilih
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFileGambar(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleAddUmkm = async (e) => {
     e.preventDefault();
@@ -32,34 +43,43 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
       ? formData.rtRw.split('RW')[1].trim() 
       : '01';
 
-    const newUmkmData = {
-      no: umkmList.length + 1,
-      namaUsaha: formData.namaUsaha,
-      pemilik: formData.pemilik,
-      jenisKelamin: formData.jenisKelamin,
-      usia: parseInt(formData.usia) || '-',
-      kategori: formData.kategori,
-      subKategori: formData.kelompokUsaha || 'PERDAGANGAN',
-      kelompokUsaha: formData.kelompokUsaha || 'PERDAGANGAN',
-      jenisBarangJasa: formData.jenisBarangJasa || 'PRODUK UMKM',
-      alamat: formData.alamat || 'Kutowinangun Kidul',
-      rtRw: formData.rtRw,
-      rw: extractedRw,
-      kontak: formData.kontak || '08123456789',
-      linkGmaps: formData.linkGmaps || '', // <--- TERKIRIM KE BACKEND
-      deskripsi: formData.deskripsi || 'Sektor UMKM Kelurahan Kutowinangun Kidul.',
-      gambar: formData.gambar || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
-      jamOperasional: formData.jamOperasional,
-      produkUnggulan: formData.produkUnggulanStr ? formData.produkUnggulanStr.split(',').map(s => s.trim()) : ['Produk Unggulan'],
-      tahunBerdiri: '2026',
-      status: 'Aktif'
-    };
+    // 1. Gunakan FormData agar mendukung pengiriman File + Teks ke backend Multer
+    const bodyFormData = new FormData();
+    bodyFormData.append('no', umkmList.length + 1);
+    bodyFormData.append('namaUsaha', formData.namaUsaha);
+    bodyFormData.append('pemilik', formData.pemilik);
+    bodyFormData.append('jenisKelamin', formData.jenisKelamin);
+    bodyFormData.append('usia', parseInt(formData.usia) || '-');
+    bodyFormData.append('kategori', formData.kategori);
+    bodyFormData.append('subKategori', formData.kelompokUsaha || 'PERDAGANGAN');
+    bodyFormData.append('kelompokUsaha', formData.kelompokUsaha || 'PERDAGANGAN');
+    bodyFormData.append('jenisBarangJasa', formData.jenisBarangJasa || 'PRODUK UMKM');
+    bodyFormData.append('alamat', formData.alamat || 'Kutowinangun Kidul');
+    bodyFormData.append('rtRw', formData.rtRw);
+    bodyFormData.append('rw', extractedRw);
+    bodyFormData.append('kontak', formData.kontak || '08123456789');
+    bodyFormData.append('linkGmaps', formData.linkGmaps || '');
+    bodyFormData.append('deskripsi', formData.deskripsi || 'Sektor UMKM Kelurahan Kutowinangun Kidul.');
+    bodyFormData.append('jamOperasional', formData.jamOperasional);
+    bodyFormData.append('tahunBerdiri', '2026');
+    bodyFormData.append('status', 'Aktif');
+
+    // Mengirim array produk unggulan sebagai string JSON
+    const produkArr = formData.produkUnggulanStr 
+      ? formData.produkUnggulanStr.split(',').map(s => s.trim()) 
+      : ['Produk Unggulan'];
+    bodyFormData.append('produkUnggulan', JSON.stringify(produkArr));
+
+    // Masukkan file gambar jika diunggah oleh user
+    if (fileGambar) {
+      bodyFormData.append('gambar', fileGambar);
+    }
 
     try {
+      // 2. Fetch ke backend tanpa header Content-Type (otomatis ditangani browser untuk multipart/form-data)
       const response = await fetch('http://localhost:5000/api/umkm', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newUmkmData)
+        body: bodyFormData
       });
 
       if (!response.ok) throw new Error('Gagal menyimpan data ke server');
@@ -93,6 +113,45 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
         </div>
 
         <form onSubmit={handleAddUmkm} className="space-y-4 text-xs">
+          
+          {/* UPLOAD FOTO USAHA */}
+          <div>
+            <label className="block font-bold text-sky-950 mb-1 flex items-center gap-1">
+              <ImageIcon className="w-3.5 h-3.5 text-sky-500" />
+              <span>Foto Tempat Usaha / Produk (Opsional)</span>
+            </label>
+            
+            {imagePreview && (
+              <div className="mb-2 relative w-full h-36 rounded-2xl overflow-hidden border border-sky-200">
+                <img src={imagePreview} alt="Preview Usaha" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => { setFileGambar(null); setImagePreview(null); }}
+                  className="absolute top-2 right-2 bg-rose-500 text-white rounded-full p-1 shadow-md hover:bg-rose-600 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            <div className="flex items-center justify-center w-full">
+              <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-sky-200 rounded-2xl cursor-pointer bg-sky-50/30 hover:bg-sky-50 transition-all">
+                <div className="flex flex-col items-center justify-center pt-2 pb-2">
+                  <Upload className="w-5 h-5 text-sky-500 mb-1" />
+                  <p className="text-[11px] text-sky-800 font-semibold">Klik untuk unggah foto usaha</p>
+                  <p className="text-[9px] text-sky-500">PNG, JPG, atau WEBP (Maks. 5MB)</p>
+                </div>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleImageChange} 
+                  className="hidden" 
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* NAMA USAHA */}
           <div>
             <label className="block font-bold text-sky-950 mb-1">Nama Usaha *</label>
             <input

@@ -2,6 +2,17 @@ import React from 'react';
 import { Store, MapPin, User, Eye, Edit, Trash2 } from 'lucide-react';
 
 export default function GridView({ filteredUmkm, setSelectedUmkm, onDelete, onEdit }) {
+  // Fungsi penentu URL gambar (URL Absolut/Upload Server/Fallback Unsplash)
+  const getImageUrl = (rawGambar) => {
+    if (!rawGambar) {
+      return 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80';
+    }
+    if (rawGambar.startsWith('http://') || rawGambar.startsWith('https://')) {
+      return rawGambar;
+    }
+    return `http://localhost:5000${rawGambar}`;
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -30,10 +41,14 @@ export default function GridView({ filteredUmkm, setSelectedUmkm, onDelete, onEd
             >
               <div className="relative h-48 overflow-hidden bg-sky-50">
                 <img 
-                  src={umkm.gambar || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80'} 
+                  src={getImageUrl(umkm.gambar)} 
                   alt={umkm.namaUsaha}
                   loading="lazy"
                   decoding="async"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80';
+                  }}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute top-3 left-3 flex gap-1.5 flex-wrap">

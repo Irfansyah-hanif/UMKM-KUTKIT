@@ -19,6 +19,20 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
     }
   };
 
+  // --- LOGIKA FORMALISASI URL GAMBAR ---
+  const getImageUrl = () => {
+    const rawGambar = selectedUmkm.gambar;
+    if (!rawGambar) {
+      return 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80';
+    }
+    // Jika gambar dikirim dalam format URL absolute (http/https)
+    if (rawGambar.startsWith('http://') || rawGambar.startsWith('https://')) {
+      return rawGambar;
+    }
+    // Jika path relatif (seperti '/uploads/12345.jpg') dari backend Multer
+    return `http://localhost:5000${rawGambar}`;
+  };
+
   // --- LOGIKA PARSER GOOGLE MAPS ---
   const getMapsUrls = () => {
     const rawInput = (selectedUmkm.linkGmaps || '').trim();
@@ -61,13 +75,17 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
         onClick={(e) => e.stopPropagation()}
       >
         
-        {/* Header Gambar Usaha (Ditambahkan Lazy Loading) */}
+        {/* Header Gambar Usaha (Mendukung File Upload Backend) */}
         <div className="relative h-52 sm:h-60 bg-sky-50">
           <img 
-            src={selectedUmkm.gambar || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80'} 
+            src={getImageUrl()} 
             alt={selectedUmkm.namaUsaha} 
             loading="lazy"
             decoding="async"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80';
+            }}
             className="w-full h-full object-cover"
           />
           <button

@@ -106,30 +106,43 @@ export default function App() {
     }
   };
 
-  // Fitur Edit Data
+  // Fitur Edit Data (Mendukung FormData / Upload File & JSON)
   const handleEditUmkm = async (id, updatedData) => {
     try {
+      // Cek apakah data bertipe FormData (Upload file gambar)
+      const isFormData = updatedData instanceof FormData;
+
       const res = await fetch(`http://localhost:5000/api/umkm/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedData),
+        // Jika FormData, biarkan browser yang set Content-Type & boundary secara otomatis
+        headers: isFormData ? {} : { 'Content-Type': 'application/json' },
+        body: isFormData ? updatedData : JSON.stringify(updatedData),
       });
 
       const data = await res.json();
 
       if (res.ok) {
+        // 1. Update daftar utama UMKM di state
         setUmkmList((prev) => {
           if (!Array.isArray(prev)) return [];
           return prev.map((item) => (item._id === id ? data : item));
         });
-        setSelectedUmkm(null);
-        alert('Data berhasil diperbarui!');
+
+        // 2. Jika modal detail sedang aktif menampilkan UMKM ini, perbarui datanya secara langsung
+        if (selectedUmkm && selectedUmkm._id === id) {
+          setSelectedUmkm(data);
+        }
+
+        // 3. Tutup modal edit
+        setEditingUmkm(null);
+
+        alert('✨ Data UMKM berhasil diperbarui!');
       } else {
-        alert(`Gagal mengupdate: ${data.error || data.message}`);
+        alert(`Gagal mengupdate [Error ${res.status}]: ${data.error || data.message || 'Terjadi kesalahan pada server'}`);
       }
     } catch (err) {
       console.error('Error saat mengedit:', err);
-      alert('Terjadi kesalahan koneksi saat memperbarui data.');
+      alert('Terjadi kesalahan koneksi saat memperbarui data. Pastikan server backend berjalan.');
     }
   };
 

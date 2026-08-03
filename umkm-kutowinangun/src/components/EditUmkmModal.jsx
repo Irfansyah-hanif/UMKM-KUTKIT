@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, Loader2, Save, MapPin, Phone } from 'lucide-react';
+import { X, Loader2, Save, MapPin, Phone, Upload, Image as ImageIcon } from 'lucide-react';
 
 export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fileGambar, setFileGambar] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+
   const [formData, setFormData] = useState({
     namaUsaha: '',
     pemilik: '',
@@ -15,10 +18,9 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
     rtRw: '',
     rw: '01',
     kontak: '',
-    linkGmaps: '', // <--- FIELD GOOGLE MAPS
+    linkGmaps: '',
     jamOperasional: '',
     deskripsi: '',
-    gambar: '',
     produkUnggulanStr: ''
   });
 
@@ -36,18 +38,37 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
         rtRw: editingUmkm.rtRw || 'RT 01 / RW 01',
         rw: editingUmkm.rw || '01',
         kontak: editingUmkm.kontak || '',
-        linkGmaps: editingUmkm.linkGmaps || '', // <--- AUTOFILL FIELD GMAPS
+        linkGmaps: editingUmkm.linkGmaps || '',
         jamOperasional: editingUmkm.jamOperasional || '08.00 - 17.00 WIB',
         deskripsi: editingUmkm.deskripsi || '',
-        gambar: editingUmkm.gambar || '',
         produkUnggulanStr: Array.isArray(editingUmkm.produkUnggulan) 
           ? editingUmkm.produkUnggulan.join(', ') 
           : editingUmkm.produkUnggulan || ''
       });
+
+      // Preview gambar lama jika ada
+      if (editingUmkm.gambar) {
+        const existingImg = editingUmkm.gambar.startsWith('http') 
+          ? editingUmkm.gambar 
+          : `http://localhost:5000${editingUmkm.gambar}`;
+        setImagePreview(existingImg);
+      } else {
+        setImagePreview(null);
+      }
+      setFileGambar(null);
     }
   }, [editingUmkm]);
 
   if (!editingUmkm) return null;
+
+  // Handler saat file gambar baru dipilih oleh admin
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFileGambar(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -57,29 +78,43 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
       ? formData.rtRw.split('RW')[1].trim() 
       : formData.rw || '01';
 
-    const updatedData = {
-      ...editingUmkm,
-      namaUsaha: formData.namaUsaha,
-      pemilik: formData.pemilik,
-      jenisKelamin: formData.jenisKelamin,
-      usia: parseInt(formData.usia) || '-',
-      kategori: formData.kategori,
-      kelompokUsaha: formData.kelompokUsaha,
-      jenisBarangJasa: formData.jenisBarangJasa,
-      alamat: formData.alamat,
-      rtRw: formData.rtRw,
-      rw: extractedRw,
-      kontak: formData.kontak,
-      linkGmaps: formData.linkGmaps, // <--- UPDATE GOOGLE MAPS KE DB
-      deskripsi: formData.deskripsi,
-      gambar: formData.gambar,
-      jamOperasional: formData.jamOperasional,
-      produkUnggulan: formData.produkUnggulanStr ? formData.produkUnggulanStr.split(',').map(s => s.trim()) : ['Produk Unggulan']
-    };
+    // 1. Menggunakan FormData agar mendukung pengiriman File + Teks
+    const bodyFormData = new FormData();
+    bodyFormData.append('namaUsaha', formData.namaUsaha);
+    bodyFormData.append('pemilik', formData.pemilik);
+    bodyFormData.append('jenisKelamin', formData.jenisKelamin);
+    bodyFormData.append('usia', parseInt(formData.usia) || '-');
+    bodyFormData.append('kategori', formData.kategori);
+    bodyFormData.append('kelompokUsaha', formData.kelompokUsaha);
+    bodyFormData.append('jenisBarangJasa', formData.jenisBarangJasa);
+    bodyFormData.append('alamat', formData.alamat);
+    bodyFormData.append('rtRw', formData.rtRw);
+    bodyFormData.append('rw', extractedRw);
+    bodyFormData.append('kontak', formData.kontak);
+    bodyFormData.append('linkGmaps', formData.linkGmaps);
+    bodyFormData.append('deskripsi', formData.deskripsi);
+    bodyFormData.append('jamOperasional', formData.jamOperasional);
 
-    await onEdit(editingUmkm._id, updatedData);
-    setIsSubmitting(false);
-    setEditingUmkm(null);
+    const produkArr = formData.produkUnggulanStr 
+      ? formData.produkUnggulanStr.split(',').map(s => s.trim()) 
+      : ['Produk Unggulan'];
+    bodyFormData.append('produkUnggulan', JSON.stringify(produkArr));
+
+    // Jika admin mengunggah foto baru
+    if (fileGambar) {
+      bodyFormData.append('gambar', fileGambar);
+    }
+
+    try {
+      // Panggil fungsi onEdit dengan ID dan FormData
+      await onEdit(editingUmkm._id, bodyFormData);
+      setEditingUmkm(null);
+    } catch (error) {
+      console.error('Error saat update UMKM:', error);
+      alert('Gagal memperbarui data UMKM.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -99,6 +134,45 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          
+          {/* UPLOAD FOTO USAHA BARU */}
+          <div>
+            <label className="block font-bold text-sky-950 mb-1 flex items-center gap-1">
+              <ImageIcon className="w-3.5 h-3.5 text-sky-500" />
+              <span>Foto Usaha / Produk (Ganti Gambar)</span>
+            </label>
+            
+            {imagePreview && (
+              <div className="mb-2 relative w-full h-36 rounded-2xl overflow-hidden border border-sky-200">
+                <img src={imagePreview} alt="Preview Usaha" className="w-full h-full object-cover" />
+                {fileGambar && (
+                  <button
+                    type="button"
+                    onClick={() => { setFileGambar(null); setImagePreview(editingUmkm.gambar ? `http://localhost:5000${editingUmkm.gambar}` : null); }}
+                    className="absolute top-2 right-2 bg-rose-500 text-white rounded-full p-1 shadow-md hover:bg-rose-600 cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            <div className="flex items-center justify-center w-full">
+              <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-sky-200 rounded-2xl cursor-pointer bg-sky-50/30 hover:bg-sky-50 transition-all">
+                <div className="flex flex-col items-center justify-center">
+                  <Upload className="w-4 h-4 text-sky-500 mb-1" />
+                  <p className="text-[11px] text-sky-800 font-semibold">Pilih foto baru untuk mengganti</p>
+                </div>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleImageChange} 
+                  className="hidden" 
+                />
+              </label>
+            </div>
+          </div>
+
           <div>
             <label className="block font-bold text-sky-950 mb-1">Nama Usaha *</label>
             <input

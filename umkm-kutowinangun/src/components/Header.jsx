@@ -1,110 +1,110 @@
 import React from 'react';
-import { Building2, LayoutGrid, Table, ShieldCheck, LogOut, Lock, Plus } from 'lucide-react';
+import { Home, LayoutGrid, Table, Plus, LogIn, LogOut } from 'lucide-react';
 
 export default function Header({ 
-  viewMode, 
-  setViewMode, 
+  activePage, 
+  setActivePage, 
   setIsAddModalOpen, 
   isAdmin, 
   setIsAdminModalOpen, 
   handleAdminLogout 
 }) {
   return (
-    <header className="bg-white/90 backdrop-blur-md border-b border-sky-100 sticky top-0 z-40 print:hidden transition-all">
-      <div className="w-full px-4 sm:px-8 lg:px-12 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
+    <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-sky-100 px-4 sm:px-8 lg:px-12 py-3 shadow-sm transition-all print:hidden">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
         
-        {/* Identitas Branding & Badge Status Admin */}
-        <div className="flex items-center justify-between w-full sm:w-auto">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-sky-500 text-white flex items-center justify-center shadow-md shadow-sky-500/20 shrink-0">
-              <Building2 className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-black text-sky-950 text-base leading-tight tracking-tight">
-                  Pendataan UMKM
-                </h1>
-                {isAdmin && (
-                  <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-200">
-                    <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                    Mode Admin
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-sky-700 font-semibold">
-                Kelurahan Kutowinangun Kidul
-              </p>
-            </div>
+        {/* Brand / Logo */}
+        <div 
+          onClick={() => setActivePage('home')}
+          className="flex items-center gap-3 cursor-pointer group"
+        >
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-sky-200 group-hover:scale-105 transition-transform">
+            <span className="font-black text-lg">K</span>
+          </div>
+          <div>
+            <h1 className="font-extrabold text-sm sm:text-base text-sky-950 tracking-tight leading-tight group-hover:text-sky-600 transition-colors">
+              UMKM Kutowinangun Kidul
+            </h1>
+            <p className="text-[11px] font-medium text-sky-700">
+              Kecamatan Tingkir, Kota Salatiga
+            </p>
           </div>
         </div>
 
-        {/* Action Controls Toolbar */}
-        <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+        {/* Navigation Tabs & Actions */}
+        <div className="flex items-center flex-wrap gap-2">
           
-          {/* Switch Mode Tampilan (Tabel / Grid Katalog) */}
-          <div className="bg-sky-50 p-1 rounded-2xl border border-sky-100 flex items-center gap-1">
+          {/* Navigasi 3 Halaman Utama */}
+          <div className="bg-sky-50/80 p-1 rounded-2xl border border-sky-100 flex items-center gap-1">
             <button
-              onClick={() => setViewMode('official_table')}
+              onClick={() => setActivePage('home')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                viewMode === 'official_table'
-                  ? 'bg-white text-sky-950 shadow-xs'
-                  : 'text-sky-700 hover:text-sky-950'
+                activePage === 'home'
+                  ? 'bg-white text-sky-900 shadow-sm'
+                  : 'text-sky-700 hover:text-sky-950 hover:bg-sky-100/50'
               }`}
-              title="Tampilan Tabel Resmi Laporan"
             >
-              <Table className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Tabel</span>
+              <Home className="w-3.5 h-3.5" />
+              <span>Beranda</span>
             </button>
 
             <button
-              onClick={() => setViewMode('grid_catalog')}
+              onClick={() => setActivePage('grid_catalog')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                viewMode === 'grid_catalog'
-                  ? 'bg-white text-sky-950 shadow-xs'
-                  : 'text-sky-700 hover:text-sky-950'
+                activePage === 'grid_catalog'
+                  ? 'bg-white text-sky-900 shadow-sm'
+                  : 'text-sky-700 hover:text-sky-950 hover:bg-sky-100/50'
               }`}
-              title="Tampilan Katalog Kartu"
             >
               <LayoutGrid className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Katalog</span>
+              <span>Katalog</span>
+            </button>
+
+            <button
+              onClick={() => setActivePage('official_table')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activePage === 'official_table'
+                  ? 'bg-white text-sky-900 shadow-sm'
+                  : 'text-sky-700 hover:text-sky-950 hover:bg-sky-100/50'
+              }`}
+            >
+              <Table className="w-3.5 h-3.5" />
+              <span>Tabel Resmi</span>
             </button>
           </div>
 
-          <div className="h-6 w-[1px] bg-sky-200/60 hidden sm:block"></div>
-
-          {/* Tombol Tambah UMKM (Hanya Muncul Jika Admin) */}
-          {isAdmin && (
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-sky-500 hover:bg-sky-600 active:scale-95 text-white font-bold text-xs rounded-xl transition-all cursor-pointer shadow-xs shadow-sky-500/20"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Tambah UMKM</span>
-            </button>
-          )}
-
-          {/* Tombol Akses / Logout Admin */}
-          {isAdmin ? (
-            <button
-              onClick={handleAdminLogout}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-600 border border-rose-200 font-bold text-xs rounded-xl transition-all cursor-pointer"
-              title="Keluar dari mode admin"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Keluar Admin</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => setIsAdminModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-sky-50 hover:bg-sky-100 active:scale-95 text-sky-900 border border-sky-200 font-bold text-xs rounded-xl transition-all cursor-pointer shadow-2xs"
-            >
-              <Lock className="w-3.5 h-3.5 text-sky-600" />
-              <span>Akses Admin</span>
-            </button>
-          )}
+          {/* Tombol Akses Admin */}
+          <div className="flex items-center gap-2 pl-2 border-l border-sky-100">
+            {isAdmin ? (
+              <>
+                <button
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-sm transition-all cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Tambah UMKM</span>
+                </button>
+                <button
+                  onClick={handleAdminLogout}
+                  className="inline-flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs px-3 py-2 rounded-xl transition-all cursor-pointer border border-rose-200"
+                  title="Keluar Mode Admin"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setIsAdminModalOpen(true)}
+                className="inline-flex items-center gap-1.5 bg-sky-100/80 hover:bg-sky-200/80 text-sky-800 font-bold text-xs px-3 py-2 rounded-xl transition-all cursor-pointer border border-sky-200/60"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Admin</span>
+              </button>
+            )}
+          </div>
 
         </div>
-
       </div>
     </header>
   );

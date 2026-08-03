@@ -2,11 +2,46 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
+const multer = require('multer');
+const fs = require('fs');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// 0. Otomatis buat folder 'uploads' jika belum ada
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// 1. Sajikan folder 'uploads' secara publik agar gambar bisa diakses frontend
+app.use('/uploads', express.static(uploadDir));
+
+// 2. Konfigurasi Multer untuk penyimpanan gambar
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // Batas ukuran 5MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Hanya file gambar yang diperbolehkan!'), false);
+    }
+  }
+});
 
 // Koneksi ke MongoDB Atlas via Mongoose
 mongoose.connect(process.env.MONGO_URI)
@@ -27,12 +62,12 @@ const umkmSchema = new mongoose.Schema({
   rw: String,
   kontak: String,
   deskripsi: String,
-  gambar: String,
+  gambar: String, // Menyimpan URL relatif (contoh: '/uploads/1723456789.jpg')
   jamOperasional: String,
   produkUnggulan: [String],
   tahunBerdiri: String,
   status: String,
-  linkGmaps: String // <--- DITAMBAHKAN FIELD LINK / EMBED GOOGLE MAPS
+  linkGmaps: String
 }, { timestamps: true });
 
 const Umkm = mongoose.model('Umkm', umkmSchema);
@@ -49,10 +84,26 @@ app.get('/api/umkm', async (req, res) => {
   }
 });
 
-// 2. POST: Tambah UMKM Baru
-app.post('/api/umkm', async (req, res) => {
+// 2. POST: Tambah UMKM Baru (Dengan Upload Gambar)
+app.post('/api/umkm', upload.single('gambar'), async (req, res) => {
   try {
-    const newUmkm = new Umkm(req.body);
+    const payload = { ...req.body };
+
+    // Parsing produkUnggulan jika dikirim sebagai string JSON dari FormData
+    if (typeof payload.produkUnggulan === 'string') {
+      try {
+        payload.produkUnggulan = JSON.parse(payload.produkUnggulan);
+      } catch (e) {
+        payload.produkUnggulan = payload.produkUnggulan.split(',').map(s => s.trim());
+      }
+    }
+
+    // Simpan path file gambar jika diunggah
+    if (req.file) {
+      payload.gambar = `/uploads/${req.file.filename}`;
+    }
+
+    const newUmkm = new Umkm(payload);
     const saved = await newUmkm.save();
     res.status(201).json(saved);
   } catch (err) {
@@ -60,21 +111,32 @@ app.post('/api/umkm', async (req, res) => {
   }
 });
 
-// 3. PUT: Edit / Update Data UMKM
-app.put('/api/umkm/:id', async (req, res) => {
+// 3. PUT: Edit / Update Data UMKM (Dengan Upload Gambar)
+app.put('/api/umkm/:id', upload.single('gambar'), async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Validasi format ObjectId MongoDB
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ error: 'Format ID tidak valid untuk MongoDB' });
     }
 
-    const updatedUmkm = await Umkm.findByIdAndUpdate(
-      id,
-      req.body,
-      { new: true }
-    );
+    const payload = { ...req.body };
+
+    if (typeof payload.produkUnggulan === 'string') {
+      try {
+        payload.produkUnggulan = JSON.parse(payload.produkUnggulan);
+      } catch (e) {
+        payload.produkUnggulan = payload.produkUnggulan.split(',').map(s => s.trim());
+      }
+    }
+
+    // Update path gambar jika ada file baru diunggah
+    if (req.file) {
+      payload.gambar = `/uploads/${req.file.filename}`;
+    }
+
+    // Opsi { returnDocument: 'after' } digunakan untuk menggantikan { new: true } sesuai standar Mongoose v8+
+    const updatedUmkm = await Umkm.findByIdAndUpdate(id, payload, { returnDocument: 'after' });
 
     if (!updatedUmkm) {
       return res.status(404).json({ message: 'Data UMKM tidak ditemukan di database' });
@@ -86,12 +148,11 @@ app.put('/api/umkm/:id', async (req, res) => {
   }
 });
 
-// 4. DELETE: Hapus Data UMKM (Aman & Terverifikasi)
+// 4. DELETE: Hapus Data UMKM
 app.delete('/api/umkm/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Validasi apakah string ID merupakan ObjectId 24-karakter valid milik MongoDB
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ 
         error: 'Format ID tidak valid. Data ini mungkin data dummy lokal lama dan belum ada di MongoDB Atlas.' 
