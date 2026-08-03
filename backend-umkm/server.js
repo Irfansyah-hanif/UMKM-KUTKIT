@@ -11,6 +11,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Endpoint Health Check untuk Railway/Monitoring
+app.get('/', (req, res) => {
+  res.send('API UMKM Kutowinangun Kidul is Running!');
+});
+
 // 0. Otomatis buat folder 'uploads' jika belum ada
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -50,11 +55,15 @@ const uploadFields = upload.fields([
 ]);
 
 // Koneksi ke MongoDB Atlas
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ Terhubung ke MongoDB Atlas!'))
-  .catch((err) => console.error('❌ Gagal Koneksi MongoDB:', err));
+if (!process.env.MONGO_URI) {
+  console.error('❌ FATAL: MONGO_URI belum diset di Environment Variables!');
+} else {
+  mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log('✅ Terhubung ke MongoDB Atlas!'))
+    .catch((err) => console.error('❌ Gagal Koneksi MongoDB:', err));
+}
 
-// Schema Data UMKM (Ditambahkan Field 'galeri')
+// Schema Data UMKM
 const umkmSchema = new mongoose.Schema({
   namaUsaha: String,
   pemilik: String,
@@ -69,7 +78,7 @@ const umkmSchema = new mongoose.Schema({
   kontak: String,
   deskripsi: String,
   gambar: String,         // Path Foto Utama
-  galeri: [String],       // Array Path Foto Produk / Makanan / Soto
+  galeri: [String],       // Array Path Foto Produk
   jamOperasional: String,
   produkUnggulan: [String],
   tahunBerdiri: String,
@@ -91,12 +100,11 @@ app.get('/api/umkm', async (req, res) => {
   }
 });
 
-// 2. POST: Tambah UMKM Baru (Foto Utama + Galeri Foto)
+// 2. POST: Tambah UMKM Baru
 app.post('/api/umkm', uploadFields, async (req, res) => {
   try {
     const payload = { ...req.body };
 
-    // Parsing produkUnggulan jika dikirim sebagai string JSON
     if (typeof payload.produkUnggulan === 'string') {
       try {
         payload.produkUnggulan = JSON.parse(payload.produkUnggulan);
@@ -105,12 +113,10 @@ app.post('/api/umkm', uploadFields, async (req, res) => {
       }
     }
 
-    // Process Foto Utama
     if (req.files && req.files['gambar']) {
       payload.gambar = `/uploads/${req.files['gambar'][0].filename}`;
     }
 
-    // Process Galeri Foto Produk (Soto, Menu, Dll)
     if (req.files && req.files['galeri']) {
       payload.galeri = req.files['galeri'].map(f => `/uploads/${f.filename}`);
     }
@@ -142,12 +148,10 @@ app.put('/api/umkm/:id', uploadFields, async (req, res) => {
       }
     }
 
-    // Update Foto Utama jika ada file baru
     if (req.files && req.files['gambar']) {
       payload.gambar = `/uploads/${req.files['gambar'][0].filename}`;
     }
 
-    // Update Galeri Foto jika ada file baru
     if (req.files && req.files['galeri']) {
       payload.galeri = req.files['galeri'].map(f => `/uploads/${f.filename}`);
     }
@@ -185,8 +189,8 @@ app.delete('/api/umkm/:id', async (req, res) => {
   }
 });
 
-// Jalankan Server
+// Jalankan Server dengan Host '0.0.0.0'
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server backend running di http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server backend running on port ${PORT}`);
 });
