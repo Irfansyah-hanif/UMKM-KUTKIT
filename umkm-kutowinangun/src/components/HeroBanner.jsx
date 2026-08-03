@@ -1,5 +1,8 @@
 import React, { useMemo } from 'react';
-import { Sparkles, FileText, Users } from 'lucide-react';
+import { FileText, Store, Users } from 'lucide-react';
+
+// Import Gambar Lokal dari Folder Assets
+import heroMarketImg from '../assets/hero-market.jpg';
 
 export default function HeroBanner({ umkmList, setViewMode }) {
   const statsSummary = useMemo(() => {
@@ -10,63 +13,88 @@ export default function HeroBanner({ umkmList, setViewMode }) {
   }, [umkmList]);
 
   return (
-    <section className="relative z-10 overflow-hidden bg-gradient-to-b from-sky-50/60 via-white to-white text-sky-950 py-8 lg:py-10 border-b border-sky-100 print:hidden">
-      {/* Menggunakan w-full dan padding responsif agar memenuhi lebar layar */}
-      <div className="w-full px-4 sm:px-8 lg:px-12 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+    <section className="relative w-full z-10 overflow-hidden bg-sky-950 text-white print:hidden">
+      {/* CONTAINER BANNER */}
+      <div className="relative h-[550px] sm:h-[650px] lg:h-[720px] w-full">
         
-        <div className="lg:col-span-8 space-y-3">
-          <div className="inline-flex items-center gap-2 bg-sky-100/80 border border-sky-200/60 text-sky-800 text-xs font-bold px-3.5 py-1 rounded-full">
-            <Sparkles className="w-3.5 h-3.5 text-sky-500" />
-            <span>Sistem Pendataan Terpadu Usaha Mikro Tahun 2026</span>
-          </div>
-          
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight leading-tight text-sky-950">
-            DAFTAR UMKM KELURAHAN KUTOWINANGUN KIDUL <br />
-            <span className="text-sky-600">
-              KECAMATAN TINGKIR TAHUN 2026
-            </span>
-          </h2>
+        {/* GAMBAR BACKGROUND HERO-MARKET.JPG */}
+        <img
+          src={heroMarketImg}
+          alt="Pasar Tradisional UMKM Kutowinangun Kidul"
+          className="w-full h-full object-cover object-center absolute inset-0 z-0"
+        />
 
-          <p className="text-sky-900/80 text-xs sm:text-sm max-w-3xl leading-relaxed font-medium">
-            Data terverifikasi sektor usaha produksi, perdagangan, kuliner, dan jasa warga Kelurahan Kutowinangun Kidul, Kota Salatiga.
-          </p>
+        {/* OVERLAY GRADIENT GELAP */}
+        <div className="absolute inset-0 z-10 bg-gradient-to-r from-sky-950/90 via-sky-950/75 to-sky-950/40"></div>
 
-          <div className="flex flex-wrap gap-3 pt-1">
-            <button
-              onClick={() => setViewMode('official_table')}
-              className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all cursor-pointer"
-            >
-              <FileText className="w-4 h-4" />
-              <span>Buka Tabel Laporan Resmi ({statsSummary.total} UMKM)</span>
-            </button>
+        {/* KARTU STATISTIK REKAPITULASI (POSISI: POJOK KANAN ATAS BANNER) */}
+        <div className="absolute top-6 right-4 sm:right-8 lg:right-12 z-30 hidden lg:block">
+          <div className="w-80 bg-white/10 backdrop-blur-md p-4 rounded-3xl border border-white/20 shadow-2xl space-y-3 text-white">
+            
+            {/* HEADER KARTU */}
+            <div className="flex items-center justify-between border-b border-white/20 pb-2">
+              <span className="text-xs font-black flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-sky-400" />
+                Rekapitulasi Pelaku Usaha
+              </span>
+              <span className="text-[10px] bg-sky-500/30 text-sky-200 font-bold px-2 py-0.5 rounded-md border border-sky-300/30">
+                2026
+              </span>
+            </div>
+
+            {/* GRID ANGKA STATISTIK */}
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="bg-white/10 backdrop-blur-xs p-2 rounded-2xl border border-white/15">
+                <p className="text-[9px] text-sky-200 font-extrabold uppercase">Total</p>
+                <p className="text-base font-black text-white">{statsSummary.total}</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-xs p-2 rounded-2xl border border-white/15">
+                <p className="text-[9px] text-sky-200 font-extrabold uppercase">Laki-Laki</p>
+                <p className="text-base font-black text-white">{statsSummary.laki}</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-xs p-2 rounded-2xl border border-white/15">
+                <p className="text-[9px] text-sky-200 font-extrabold uppercase">Perempuan</p>
+                <p className="text-base font-black text-white">{statsSummary.perempuan}</p>
+              </div>
+            </div>
+
           </div>
         </div>
 
-        <div className="lg:col-span-4 flex justify-center">
-          <div className="w-full bg-white border border-sky-200/80 p-5 rounded-3xl shadow-xs space-y-3">
-            <div className="flex items-center justify-between border-b border-sky-100 pb-2.5">
-              <span className="text-xs font-bold text-sky-950 flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-sky-500" />
-                Rekapitulasi Pelaku Usaha
-              </span>
-              <span className="text-[11px] bg-sky-100 text-sky-800 font-bold px-2 py-0.5 rounded-md">
-                Tahun 2026
-              </span>
+        {/* CONTENT OVERLAY DI ATAS GAMBAR */}
+        <div className="relative z-20 h-full w-full px-4 sm:px-8 lg:px-12 flex items-center">
+          <div className="w-full max-w-3xl space-y-4">
+
+            {/* JUDUL UTAMA */}
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight text-white drop-shadow-md">
+              DAFTAR UMKM KELURAHAN KUTOWINANGUN KIDUL <br />
+              <span className="text-sky-400">KECAMATAN TINGKIR TAHUN 2026</span>
+            </h1>
+
+            {/* DESKRIPSI */}
+            <p className="text-sky-100 text-xs sm:text-sm max-w-2xl leading-relaxed font-medium drop-shadow-xs">
+              Data terverifikasi sektor usaha produksi, perdagangan, kuliner, dan jasa warga Kelurahan Kutowinangun Kidul, Kota Salatiga.
+            </p>
+
+            {/* TOMBOL AKSI */}
+            <div className="flex flex-wrap gap-3 pt-3">
+              <button
+                onClick={() => setViewMode('official_table')}
+                className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs px-5 py-3 rounded-xl shadow-lg transition-all cursor-pointer hover:scale-105"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Buka Tabel Laporan Resmi ({statsSummary.total} UMKM)</span>
+              </button>
+
+              <button
+                onClick={() => setViewMode('grid_catalog')}
+                className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs px-5 py-3 rounded-xl border border-white/30 backdrop-blur-md transition-all cursor-pointer"
+              >
+                <Store className="w-4 h-4 text-sky-300" />
+                <span>Jelajahi Katalog UMKM</span>
+              </button>
             </div>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="bg-sky-50/80 p-2.5 rounded-xl border border-sky-100">
-                <p className="text-[10px] text-sky-700 font-bold uppercase">Total</p>
-                <p className="text-lg font-black text-sky-950">{statsSummary.total}</p>
-              </div>
-              <div className="bg-sky-50/80 p-2.5 rounded-xl border border-sky-100">
-                <p className="text-[10px] text-sky-700 font-bold uppercase">Laki-Laki</p>
-                <p className="text-lg font-black text-sky-950">{statsSummary.laki}</p>
-              </div>
-              <div className="bg-sky-50/80 p-2.5 rounded-xl border border-sky-100">
-                <p className="text-[10px] text-sky-700 font-bold uppercase">Perempuan</p>
-                <p className="text-lg font-black text-sky-950">{statsSummary.perempuan}</p>
-              </div>
-            </div>
+
           </div>
         </div>
 
