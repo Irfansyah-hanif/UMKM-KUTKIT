@@ -1,0 +1,15 @@
+# Mengabaikan node_modules di semua subfolder
+**/node_modules/
+
+# Mengabaikan file env / kredensial database di semua subfolder
+**/.env
+**/.env.local
+
+# Mengabaikan folder hasil build frontend
+**/dist/
+**/build/
+
+# Logs & OS System Files
+*.log
+.DS_Store
+Thumbs.db
