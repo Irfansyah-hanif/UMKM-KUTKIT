@@ -90,5 +90,5 @@ export default function DigitalMarketingGuide() {
 
       </div>
     </section>
-  );
+);
 }
