@@ -8,7 +8,16 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 const app = express();
 
-app.use(cors());
+// Konfigurasi CORS agar mengizinkan request dari frontend Vercel
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
+// Tangani Preflight Request
+app.options('*', cors());
+
 app.use(express.json());
 
 // Endpoint Health Check
@@ -27,15 +36,15 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'umkm-kutowinangun', // Nama folder di dashboard Cloudinary
+    folder: 'umkm-kutowinangun',
     allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
-    transformation: [{ width: 1000, height: 1000, crop: 'limit' }] // Kompresi otomatis
+    transformation: [{ width: 1000, height: 1000, crop: 'limit' }]
   }
 });
 
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 } // Maksimal 5MB
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
 
 // Middleware Upload Banyak Field
@@ -116,7 +125,6 @@ app.post('/api/umkm', uploadFields, async (req, res) => {
       }
     }
 
-    // Mengambil URL HTTPS langsung dari Cloudinary
     if (req.files && req.files['gambar']) {
       payload.gambar = req.files['gambar'][0].path;
     }
