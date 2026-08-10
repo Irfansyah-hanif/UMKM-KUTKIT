@@ -101,7 +101,9 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/umkm', {
+      // Menggunakan VITE_API_URL dinamis dari Environment Variable Vercel / .env
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${baseUrl}/api/umkm`, {
         method: 'POST',
         body: bodyFormData
       });

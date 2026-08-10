@@ -8,6 +8,9 @@ import TableView from './components/TableView';
 import GridView from './components/GridView';
 import { Building2, Loader2, Store } from 'lucide-react';
 
+// Base URL API Dinamis
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 // Lazy Import Komponen Modal (Hanya dimuat saat dibutuhkan)
 const UmkmDetailModal = lazy(() => import('./components/UmkmDetailModal'));
 const AddUmkmModal = lazy(() => import('./components/AddUmkmModal'));
@@ -55,7 +58,7 @@ export default function App() {
 
   // Fetch Data dari Server Express
   useEffect(() => {
-    fetch('http://localhost:5000/api/umkm')
+    fetch(`${API_BASE_URL}/api/umkm`)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
@@ -81,7 +84,7 @@ export default function App() {
     if (!window.confirm('Apakah Anda yakin ingin menghapus data UMKM ini?')) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/umkm/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/umkm/${id}`, {
         method: 'DELETE',
       });
 
@@ -112,7 +115,7 @@ export default function App() {
       // Cek apakah data bertipe FormData (Upload file gambar)
       const isFormData = updatedData instanceof FormData;
 
-      const res = await fetch(`http://localhost:5000/api/umkm/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/umkm/${id}`, {
         method: 'PUT',
         // Jika FormData, biarkan browser yang set Content-Type & boundary secara otomatis
         headers: isFormData ? {} : { 'Content-Type': 'application/json' },

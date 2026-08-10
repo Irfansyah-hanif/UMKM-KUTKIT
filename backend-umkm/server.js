@@ -8,33 +8,40 @@ const fs = require('fs');
 
 const app = express();
 
+// Konfigurasi CORS agar mengizinkan request dari mana saja (termasuk Vercel Frontend)
 app.use(cors());
 app.use(express.json());
 
-// Endpoint Health Check untuk Railway/Monitoring
+// Endpoint Health Check
 app.get('/', (req, res) => {
   res.send('API UMKM Kutowinangun Kidul is Running!');
 });
 
-// 0. Otomatis buat folder 'uploads' jika belum ada
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+// Gunakan Memory Storage jika berjalan di Serverless Vercel, dan Disk Storage jika di Lokal
+const isVercel = process.env.VERCEL || process.env.NODE_ENV === 'production';
 
-// 1. Sajikan folder 'uploads' secara publik
-app.use('/uploads', express.static(uploadDir));
-
-// 2. Konfigurasi Multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+let storage;
+if (!isVercel) {
+  // Folder uploads hanya dibuat jika berjalan di komputer lokal
+  const uploadDir = path.join(__dirname, 'uploads');
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
   }
-});
+  app.use('/uploads', express.static(uploadDir));
+
+  storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, 'uploads/');
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+  });
+} else {
+  // Gunakan Memory Storage di Vercel agar tidak memicu error Read-Only Filesystem
+  storage = multer.memoryStorage();
+}
 
 const upload = multer({ 
   storage: storage,
@@ -48,20 +55,34 @@ const upload = multer({
   }
 });
 
-// Middleware Upload Banyak Field: 1 Foto Utama + Max 8 Foto Galeri/Produk
+// Middleware Upload Banyak Field
 const uploadFields = upload.fields([
   { name: 'gambar', maxCount: 1 },
   { name: 'galeri', maxCount: 8 }
 ]);
 
-// Koneksi ke MongoDB Atlas
-if (!process.env.MONGO_URI) {
-  console.error('❌ FATAL: MONGO_URI belum diset di Environment Variables!');
-} else {
-  mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('✅ Terhubung ke MongoDB Atlas!'))
-    .catch((err) => console.error('❌ Gagal Koneksi MongoDB:', err));
-}
+// Koneksi ke MongoDB Atlas (Menggunakan Mongoose Caching untuk Serverless)
+let isConnected = false;
+const connectDB = async () => {
+  if (isConnected) return;
+  if (!process.env.MONGO_URI) {
+    console.error('❌ FATAL: MONGO_URI belum diset di Environment Variables!');
+    return;
+  }
+  try {
+    const db = await mongoose.connect(process.env.MONGO_URI);
+    isConnected = db.connections[0].readyState;
+    console.log('✅ Terhubung ke MongoDB Atlas!');
+  } catch (err) {
+    console.error('❌ Gagal Koneksi MongoDB:', err);
+  }
+};
+
+// Panggil koneksi DB untuk setiap request
+app.use(async (req, res, next) => {
+  await connectDB();
+  next();
+});
 
 // Schema Data UMKM
 const umkmSchema = new mongoose.Schema({
@@ -77,8 +98,8 @@ const umkmSchema = new mongoose.Schema({
   rw: String,
   kontak: String,
   deskripsi: String,
-  gambar: String,         // Path Foto Utama
-  galeri: [String],       // Array Path Foto Produk
+  gambar: String,         // Path / URL Foto Utama
+  galeri: [String],       // Array Path / URL Foto Produk
   jamOperasional: String,
   produkUnggulan: [String],
   tahunBerdiri: String,
@@ -114,11 +135,20 @@ app.post('/api/umkm', uploadFields, async (req, res) => {
     }
 
     if (req.files && req.files['gambar']) {
-      payload.gambar = `/uploads/${req.files['gambar'][0].filename}`;
+      if (!isVercel) {
+        payload.gambar = `/uploads/${req.files['gambar'][0].filename}`;
+      } else {
+        // Fallback untuk Vercel (Menggunakan placeholder atau gambar default)
+        payload.gambar = '/assets/hero.png';
+      }
     }
 
     if (req.files && req.files['galeri']) {
-      payload.galeri = req.files['galeri'].map(f => `/uploads/${f.filename}`);
+      if (!isVercel) {
+        payload.galeri = req.files['galeri'].map(f => `/uploads/${f.filename}`);
+      } else {
+        payload.galeri = ['/assets/hero-market.jpg'];
+      }
     }
 
     const newUmkm = new Umkm(payload);
@@ -149,11 +179,15 @@ app.put('/api/umkm/:id', uploadFields, async (req, res) => {
     }
 
     if (req.files && req.files['gambar']) {
-      payload.gambar = `/uploads/${req.files['gambar'][0].filename}`;
+      if (!isVercel) {
+        payload.gambar = `/uploads/${req.files['gambar'][0].filename}`;
+      }
     }
 
     if (req.files && req.files['galeri']) {
-      payload.galeri = req.files['galeri'].map(f => `/uploads/${f.filename}`);
+      if (!isVercel) {
+        payload.galeri = req.files['galeri'].map(f => `/uploads/${f.filename}`);
+      }
     }
 
     const updatedUmkm = await Umkm.findByIdAndUpdate(id, payload, { returnDocument: 'after' });
@@ -189,8 +223,8 @@ app.delete('/api/umkm/:id', async (req, res) => {
   }
 });
 
-// Jalankan Server dengan Host '0.0.0.0'
-if (process.env.NODE_ENV !== 'production') {
+// Jalankan Server Lokal
+if (!isVercel) {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
     console.log(`🚀 Server backend running on port ${PORT}`);
