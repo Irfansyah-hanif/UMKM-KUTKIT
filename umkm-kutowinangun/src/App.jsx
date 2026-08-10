@@ -8,10 +8,18 @@ import TableView from './components/TableView';
 import GridView from './components/GridView';
 import { Building2, Loader2, Store } from 'lucide-react';
 
-// Base URL API Dinamis
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+// Base URL API Dinamis dengan Sanitasi Format URL
+const RAW_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-// Lazy Import Komponen Modal (Hanya dimuat saat dibutuhkan)
+const API_BASE_URL = (() => {
+  let url = RAW_API_URL.trim().replace(/\/+$/, ''); // Hapus trailing slash jika ada
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = `https://${url}`;
+  }
+  return url;
+})();
+
+// Lazy Import Komponen Modal
 const UmkmDetailModal = lazy(() => import('./components/UmkmDetailModal'));
 const AddUmkmModal = lazy(() => import('./components/AddUmkmModal'));
 const EditUmkmModal = lazy(() => import('./components/EditUmkmModal'));
@@ -112,12 +120,10 @@ export default function App() {
   // Fitur Edit Data (Mendukung FormData / Upload File & JSON)
   const handleEditUmkm = async (id, updatedData) => {
     try {
-      // Cek apakah data bertipe FormData (Upload file gambar)
       const isFormData = updatedData instanceof FormData;
 
       const res = await fetch(`${API_BASE_URL}/api/umkm/${id}`, {
         method: 'PUT',
-        // Jika FormData, biarkan browser yang set Content-Type & boundary secara otomatis
         headers: isFormData ? {} : { 'Content-Type': 'application/json' },
         body: isFormData ? updatedData : JSON.stringify(updatedData),
       });
@@ -125,20 +131,16 @@ export default function App() {
       const data = await res.json();
 
       if (res.ok) {
-        // 1. Update daftar utama UMKM di state
         setUmkmList((prev) => {
           if (!Array.isArray(prev)) return [];
           return prev.map((item) => (item._id === id ? data : item));
         });
 
-        // 2. Jika modal detail sedang aktif menampilkan UMKM ini, perbarui datanya secara langsung
         if (selectedUmkm && selectedUmkm._id === id) {
           setSelectedUmkm(data);
         }
 
-        // 3. Tutup modal edit
         setEditingUmkm(null);
-
         alert('✨ Data UMKM berhasil diperbarui!');
       } else {
         alert(`Gagal mengupdate [Error ${res.status}]: ${data.error || data.message || 'Terjadi kesalahan pada server'}`);
@@ -168,11 +170,10 @@ export default function App() {
     });
   }, [umkmList, activeTab, selectedRw, searchQuery]);
 
-  // LOGIKA MENGACAK 6 DATA UMKM UNTUK KATALOG ACAK DI HALAMAN BERANDA
+  // Logika Mengacak 6 Data UMKM Unggulan
   const randomFeaturedUmkm = useMemo(() => {
     const safeList = Array.isArray(umkmList) ? umkmList : [];
     if (safeList.length === 0) return [];
-    // Mengacak susunan array dan mengambil 6 item teratas
     const shuffled = [...safeList].sort(() => 0.5 - Math.random());
     return shuffled.slice(0, 6);
   }, [umkmList]);
@@ -288,7 +289,6 @@ export default function App() {
 
       {/* MODAL WRAPPED IN SUSPENSE FOR LAZY LOADING */}
       <Suspense fallback={null}>
-        {/* Modal Detail UMKM */}
         {selectedUmkm && (
           <UmkmDetailModal 
             selectedUmkm={selectedUmkm} 
@@ -297,7 +297,6 @@ export default function App() {
           />
         )}
 
-        {/* Modal Tambah UMKM */}
         {isAddModalOpen && isAdmin && (
           <AddUmkmModal 
             setIsAddModalOpen={setIsAddModalOpen} 
@@ -306,7 +305,6 @@ export default function App() {
           />
         )}
 
-        {/* Modal Edit UMKM */}
         {editingUmkm && isAdmin && (
           <EditUmkmModal 
             editingUmkm={editingUmkm} 
@@ -315,7 +313,6 @@ export default function App() {
           />
         )}
 
-        {/* Modal Login Admin */}
         {isAdminModalOpen && (
           <AdminLoginModal 
             setIsAdminModalOpen={setIsAdminModalOpen} 

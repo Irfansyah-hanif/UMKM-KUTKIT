@@ -6,7 +6,7 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
   const [fileGambar, setFileGambar] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
-  // State untuk menyimpan galeri foto produk (soto, menu, dll)
+  // State untuk menyimpan galeri foto produk
   const [galeriFiles, setGaleriFiles] = useState([]);
   const [galeriPreviews, setGaleriPreviews] = useState([]);
 
@@ -37,7 +37,7 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
     }
   };
 
-  // Handler Galeri Foto Produk (Bisa Pilih Banyak Foto Sekaligus)
+  // Handler Galeri Foto Produk
   const handleGaleriChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length > 0) {
@@ -47,7 +47,7 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
     }
   };
 
-  // Handler Hapus 1 Foto Galeri tertentu
+  // Handler Hapus 1 Foto Galeri
   const handleRemoveGaleriItem = (index) => {
     setGaleriFiles(prev => prev.filter((_, i) => i !== index));
     setGaleriPreviews(prev => prev.filter((_, i) => i !== index));
@@ -88,12 +88,10 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
       : ['Produk Unggulan'];
     bodyFormData.append('produkUnggulan', JSON.stringify(produkArr));
 
-    // Append Foto Utama jika ada
     if (fileGambar) {
       bodyFormData.append('gambar', fileGambar);
     }
 
-    // Append Semua Foto Galeri Produk ke field 'galeri'
     if (galeriFiles.length > 0) {
       galeriFiles.forEach((file) => {
         bodyFormData.append('galeri', file);
@@ -101,8 +99,12 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
     }
 
     try {
-      // Menggunakan VITE_API_URL dinamis dari Environment Variable Vercel / .env
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      let baseUrl = rawApiUrl.trim().replace(/\/+$/, '');
+      if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+        baseUrl = `https://${baseUrl}`;
+      }
+
       const response = await fetch(`${baseUrl}/api/umkm`, {
         method: 'POST',
         body: bodyFormData
@@ -139,7 +141,6 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
         </div>
 
         <form onSubmit={handleAddUmkm} className="space-y-4 text-xs">
-          
           {/* UPLOAD FOTO UTAMA */}
           <div>
             <label className="block font-bold text-sky-950 mb-1 flex items-center gap-1">
@@ -176,14 +177,13 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
             </div>
           </div>
 
-          {/* UPLOAD GALERI FOTO PRODUK / SOTO / MENU */}
+          {/* UPLOAD GALERI FOTO PRODUK */}
           <div>
             <label className="block font-bold text-sky-950 mb-1 flex items-center gap-1">
               <Images className="w-3.5 h-3.5 text-sky-500" />
               <span>Foto Produk / Makanan / Suasana Usaha (Pilih Banyak)</span>
             </label>
 
-            {/* List Pratinjau Foto Galeri */}
             {galeriPreviews.length > 0 && (
               <div className="grid grid-cols-4 gap-2 mb-2">
                 {galeriPreviews.map((src, idx) => (
@@ -317,7 +317,7 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
             />
           </div>
 
-          {/* INPUT KONTAK / WHATSAPP */}
+          {/* INPUT KONTAK */}
           <div>
             <label className="block font-bold text-sky-950 mb-1 flex items-center gap-1">
               <Phone className="w-3.5 h-3.5 text-sky-500" />
@@ -332,7 +332,7 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
             />
           </div>
 
-          {/* INPUT LINK / EMBED GOOGLE MAPS */}
+          {/* INPUT LINK GOOGLE MAPS */}
           <div>
             <label className="block font-bold text-sky-950 mb-1 flex items-center gap-1">
               <MapPin className="w-3.5 h-3.5 text-sky-500" />

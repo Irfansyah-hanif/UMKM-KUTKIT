@@ -8,15 +8,12 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 const app = express();
 
-// Konfigurasi CORS agar mengizinkan request dari frontend Vercel
+// Konfigurasi CORS (Sudah otomatis menangani HTTP OPTIONS/Preflight)
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
-
-// Tangani Preflight Request
-app.options('*', cors());
 
 app.use(express.json());
 
