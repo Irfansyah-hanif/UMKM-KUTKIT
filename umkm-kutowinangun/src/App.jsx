@@ -183,15 +183,27 @@ export default function App() {
     const safeList = Array.isArray(umkmList) ? umkmList : [];
 
     return safeList.filter(item => {
-      const matchCategory = activeTab === 'semua' || (item.kategori && item.kategori.toLowerCase() === activeTab.toLowerCase());
+      // Normalisasi nilai tab dan nilai kategori/kelompok usaha
+      const tabKey = activeTab.toLowerCase().trim();
+      const itemKategori = (item.kategori || '').toLowerCase().trim();
+      const itemKelompok = (item.kelompokUsaha || '').toLowerCase().trim();
+
+      // Cek apakah tab cocok dengan kategori ATAU kelompokUsaha
+      const matchCategory = 
+        tabKey === 'semua' || 
+        itemKategori === tabKey || 
+        itemKelompok === tabKey;
+
       const matchRw = selectedRw === 'semua' || item.rw === selectedRw;
-      const query = searchQuery.toLowerCase();
+      const query = searchQuery.toLowerCase().trim();
+
       const matchQuery = 
         (item.namaUsaha && item.namaUsaha.toLowerCase().includes(query)) ||
         (item.pemilik && item.pemilik.toLowerCase().includes(query)) ||
         (item.alamat && item.alamat.toLowerCase().includes(query)) ||
         (item.jenisBarangJasa && item.jenisBarangJasa.toLowerCase().includes(query)) ||
-        (item.kelompokUsaha && item.kelompokUsaha.toLowerCase().includes(query));
+        (item.kelompokUsaha && item.kelompokUsaha.toLowerCase().includes(query)) ||
+        (item.kategori && item.kategori.toLowerCase().includes(query));
 
       return matchCategory && matchRw && matchQuery;
     });
