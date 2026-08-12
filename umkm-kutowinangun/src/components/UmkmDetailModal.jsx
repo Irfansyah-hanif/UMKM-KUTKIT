@@ -29,22 +29,21 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
     }
   };
 
-  // Generator URL Peta Google Maps yang Valid & Bebas Bloking iFrame
+  // Generator URL Peta yang Murni Menggunakan Link Google Maps
   const getMapsUrls = () => {
     const rawInput = (selectedUmkm.linkGmaps || '').trim();
-    const queryAlamat = encodeURIComponent(`${selectedUmkm.namaUsaha}, ${selectedUmkm.alamat || 'Kutowinangun Kidul'}, Salatiga`);
 
-    // 1. Jika berupa tag <iframe ... src="..."> dari Google Maps Embed
+    // 1. Jika pengguna menempelkan kode lengkap <iframe> dari Google Maps
     if (rawInput.includes('<iframe')) {
       const srcMatch = rawInput.match(/src=["']([^"']+)["']/);
       const embedUrl = srcMatch ? srcMatch[1] : '';
       return {
         embedUrl,
-        directUrl: embedUrl || `https://www.google.com/maps/search/?api=1&query=${queryAlamat}`
+        directUrl: embedUrl
       };
     }
 
-    // 2. Jika merupakan link embed resmi (mengandung /maps/embed)
+    // 2. Jika link sudah dalam format Google Maps Embed
     if (rawInput.includes('/maps/embed')) {
       return {
         embedUrl: rawInput,
@@ -52,11 +51,19 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
       };
     }
 
-    // 3. Jika berupa link share biasa (misal https://maps.app.goo.gl/... atau https://google.com/maps/place/...)
-    // Embed menggunakan parameter pencarian query agar pinpoint merah langsung muncul
+    // 3. Jika pengguna menginput link Google Maps biasa (maps.app.goo.gl / google.com/maps)
+    if (rawInput.startsWith('http://') || rawInput.startsWith('https://')) {
+      return {
+        embedUrl: `https://maps.google.com/maps?q=${encodeURIComponent(rawInput)}&output=embed`,
+        directUrl: rawInput
+      };
+    }
+
+    // 4. Fallback jika linkGmaps kosong (menggunakan pencarian alamat asli tanpa merubah nama usaha)
+    const fallbackQuery = encodeURIComponent(`${selectedUmkm.alamat || 'Kutowinangun Kidul'}, Salatiga`);
     return {
-      embedUrl: `https://maps.google.com/maps?q=${queryAlamat}&t=&z=16&ie=UTF8&iwloc=&output=embed`,
-      directUrl: rawInput.startsWith('http') ? rawInput : `https://www.google.com/maps/search/?api=1&query=${queryAlamat}`
+      embedUrl: `https://maps.google.com/maps?q=${fallbackQuery}&t=&z=16&ie=UTF8&iwloc=&output=embed`,
+      directUrl: `https://www.google.com/maps/search/?api=1&query=${fallbackQuery}`
     };
   };
 
@@ -179,7 +186,7 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
               </div>
             </div>
 
-            {/* PETA GOOGLE MAPS DENGAN PINPOINT MERAH PRESISI */}
+            {/* PETA LOKASI BERDASARKAN LINK GOOGLE MAPS */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-extrabold text-sky-950 uppercase tracking-wider flex items-center gap-1.5">
@@ -210,7 +217,7 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
               </div>
             </div>
 
-            {/* Tombol Aksi */}
+            {/* Tombol Aksi Bottom */}
             <div className="pt-3 border-t border-sky-100 flex flex-wrap sm:flex-nowrap gap-2.5">
               <a
                 href={`https://wa.me/${(selectedUmkm.kontak || '').replace(/[^0-9]/g, '')}`}
