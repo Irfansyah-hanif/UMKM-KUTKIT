@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import Header from './components/Header';
 import HeroBanner from './components/HeroBanner';
 import HistorySection from './components/HistorySection';
-import DigitalMarketingGuide from './components/DigitalMarketingGuide';
 import SearchFilter from './components/SearchFilter';
 import TableView from './components/TableView';
 import GridView from './components/GridView';
@@ -207,8 +206,6 @@ export default function App() {
           />
 
           <HistorySection />
-
-          <DigitalMarketingGuide />
 
           {/* SECTION KATALOG ACAK UNGGULAN */}
           <section className="w-full px-4 sm:px-8 lg:px-12 py-4 relative z-10 space-y-4">
