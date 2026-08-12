@@ -2,12 +2,10 @@ import React, { useState } from 'react';
 import { X, MapPin, Building2, Phone, Trash2, Navigation, Map, Images, ZoomIn, Store } from 'lucide-react';
 
 export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelete }) {
-  // State untuk menyimpan data gambar yang sedang dibuka di Lightbox Zoom
   const [activePreviewImage, setActivePreviewImage] = useState(null);
 
   if (!selectedUmkm) return null;
 
-  // Sanitasi & pembentukan URL Gambar aman
   const getImageUrl = (path) => {
     if (!path) return 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80';
     let url = path.trim();
@@ -31,41 +29,44 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
     }
   };
 
-  // Generator URL Peta Google Maps
+  // Generator URL Peta Google Maps yang Valid & Bebas Bloking iFrame
   const getMapsUrls = () => {
     const rawInput = (selectedUmkm.linkGmaps || '').trim();
+    const queryAlamat = encodeURIComponent(`${selectedUmkm.namaUsaha}, ${selectedUmkm.alamat || 'Kutowinangun Kidul'}, Salatiga`);
+
+    // 1. Jika berupa tag <iframe ... src="..."> dari Google Maps Embed
     if (rawInput.includes('<iframe')) {
       const srcMatch = rawInput.match(/src=["']([^"']+)["']/);
       const embedUrl = srcMatch ? srcMatch[1] : '';
       return {
         embedUrl,
-        directUrl: embedUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedUmkm.namaUsaha + ' ' + selectedUmkm.alamat)}`
+        directUrl: embedUrl || `https://www.google.com/maps/search/?api=1&query=${queryAlamat}`
       };
     }
-    if (rawInput.startsWith('http://') || rawInput.startsWith('https://')) {
+
+    // 2. Jika merupakan link embed resmi (mengandung /maps/embed)
+    if (rawInput.includes('/maps/embed')) {
       return {
-        embedUrl: `https://maps.google.com/maps?q=${encodeURIComponent(rawInput)}&output=embed`,
+        embedUrl: rawInput,
         directUrl: rawInput
       };
     }
-    const fallbackQuery = encodeURIComponent(`${selectedUmkm.namaUsaha} ${selectedUmkm.alamat} Salatiga`);
+
+    // 3. Jika berupa link share biasa (misal https://maps.app.goo.gl/... atau https://google.com/maps/place/...)
+    // Embed menggunakan parameter pencarian query agar pinpoint merah langsung muncul
     return {
-      embedUrl: `https://maps.google.com/maps?q=${fallbackQuery}&t=&z=16&ie=UTF8&iwloc=&output=embed`,
-      directUrl: `https://www.google.com/maps/search/?api=1&query=${fallbackQuery}`
+      embedUrl: `https://maps.google.com/maps?q=${queryAlamat}&t=&z=16&ie=UTF8&iwloc=&output=embed`,
+      directUrl: rawInput.startsWith('http') ? rawInput : `https://www.google.com/maps/search/?api=1&query=${queryAlamat}`
     };
   };
 
   const { embedUrl, directUrl } = getMapsUrls();
 
-  // Foto Tempat/Suasana Usaha Utama
   const fotoUtama = getImageUrl(selectedUmkm.gambar);
-
-  // Galeri Foto Produk Usaha
   const galeriProduk = Array.isArray(selectedUmkm.galeri) && selectedUmkm.galeri.length > 0 
     ? selectedUmkm.galeri 
     : [];
 
-  // Array produk unggulan untuk dijadikan caption masing-masing foto produk
   const daftarProduk = Array.isArray(selectedUmkm.produkUnggulan)
     ? selectedUmkm.produkUnggulan
     : typeof selectedUmkm.produkUnggulan === 'string'
@@ -74,7 +75,6 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
 
   return (
     <>
-      {/* MODAL UTAMA DETAIL UMKM */}
       <div 
         className="fixed inset-0 z-50 bg-sky-950/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto print:hidden"
         onClick={handleClose}
@@ -102,7 +102,7 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
 
           <div className="p-6 space-y-6">
 
-            {/* 1. SEKSI FOTO SUASANA / TEMPAT USAHA */}
+            {/* FOTO TEMPAT USAHA */}
             <div className="space-y-2">
               <h4 className="text-xs font-extrabold text-sky-950 uppercase tracking-wider flex items-center gap-1.5">
                 <Store className="w-4 h-4 text-sky-500" />
@@ -124,7 +124,7 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
               </div>
             </div>
 
-            {/* 2. SEKSI FOTO PRODUK USAHA (DENGAN CAPTION) */}
+            {/* FOTO PRODUK USAHA */}
             {galeriProduk.length > 0 && (
               <div className="space-y-2.5 pt-1">
                 <h4 className="text-xs font-extrabold text-sky-950 uppercase tracking-wider flex items-center gap-1.5">
@@ -153,7 +153,6 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
                             <ZoomIn className="w-4 h-4" />
                           </div>
                         </div>
-                        {/* Caption khusus gambar produk */}
                         <p className="text-[11px] font-semibold text-slate-700 leading-tight group-hover:text-sky-600 transition-colors line-clamp-2">
                           {captionText}
                         </p>
@@ -164,7 +163,7 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
               </div>
             )}
 
-            {/* INFORMASI PEMILIK & ALAMAT */}
+            {/* INFORMASI UMKM */}
             <div className="bg-sky-50/60 p-4 rounded-2xl space-y-2 border border-sky-100 text-xs font-medium">
               <div className="flex items-center gap-2 text-sky-900">
                 <Building2 className="w-4 h-4 text-sky-500 shrink-0" />
@@ -180,7 +179,7 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
               </div>
             </div>
 
-            {/* SECTION PETA GOOGLE MAPS */}
+            {/* PETA GOOGLE MAPS DENGAN PINPOINT MERAH PRESISI */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-extrabold text-sky-950 uppercase tracking-wider flex items-center gap-1.5">
@@ -198,7 +197,7 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
                 </a>
               </div>
 
-              <div className="w-full h-40 rounded-2xl overflow-hidden border border-sky-200/80 bg-sky-100/50 shadow-inner">
+              <div className="w-full h-44 rounded-2xl overflow-hidden border border-sky-200/80 bg-sky-100/50 shadow-inner">
                 <iframe
                   title={`Peta Lokasi ${selectedUmkm.namaUsaha}`}
                   width="100%"
@@ -211,7 +210,7 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
               </div>
             </div>
 
-            {/* Tombol Aksi Bottom */}
+            {/* Tombol Aksi */}
             <div className="pt-3 border-t border-sky-100 flex flex-wrap sm:flex-nowrap gap-2.5">
               <a
                 href={`https://wa.me/${(selectedUmkm.kontak || '').replace(/[^0-9]/g, '')}`}
@@ -257,7 +256,7 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
         </div>
       </div>
 
-      {/* LIGHTBOX MODAL (POPUP SAAT GAMBAR DIKLIK) */}
+      {/* LIGHTBOX MODAL */}
       {activePreviewImage && (
         <div
           onClick={() => setActivePreviewImage(null)}
@@ -267,7 +266,6 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
             onClick={(e) => e.stopPropagation()}
             className="relative max-w-3xl w-full bg-slate-900 text-white rounded-3xl overflow-hidden shadow-2xl border border-white/10"
           >
-            {/* Tombol Close Lightbox */}
             <button
               onClick={() => setActivePreviewImage(null)}
               className="absolute top-4 right-4 z-10 w-9 h-9 rounded-full bg-black/50 text-white hover:bg-black/80 flex items-center justify-center cursor-pointer border border-white/20 transition-all"
@@ -275,7 +273,6 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
               <X className="w-5 h-5" />
             </button>
 
-            {/* Container Gambar Utuh */}
             <div className="max-h-[75vh] flex items-center justify-center bg-black/40 p-3">
               <img
                 src={activePreviewImage.url}
@@ -284,7 +281,6 @@ export default function UmkmDetailModal({ selectedUmkm, setSelectedUmkm, onDelet
               />
             </div>
 
-            {/* Teks Keterangan & Caption Gambar */}
             <div className="p-4 bg-slate-900 border-t border-slate-800 space-y-1">
               <span className="text-[10px] font-bold text-sky-400 uppercase tracking-widest block">
                 {activePreviewImage.title}
