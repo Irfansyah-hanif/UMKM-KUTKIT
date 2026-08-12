@@ -1,110 +1,105 @@
 import React from 'react';
-import { Home, LayoutGrid, Table, Plus, LogIn, LogOut } from 'lucide-react';
+import { Home, LayoutGrid, TableProperties } from 'lucide-react';
 
-export default function Header({ 
-  activePage, 
-  setActivePage, 
-  setIsAddModalOpen, 
-  isAdmin, 
-  setIsAdminModalOpen, 
-  handleAdminLogout 
-}) {
+export default function Header({ activePage, setActivePage, setIsAddModalOpen, isAdmin, setIsAdminModalOpen, handleAdminLogout }) {
+  const navItems = [
+    { id: 'home', label: 'Beranda', icon: Home },
+    { id: 'grid_catalog', label: 'Katalog', icon: LayoutGrid },
+    { id: 'official_table', label: 'Tabel Resmi', icon: TableProperties },
+  ];
+
   return (
-    <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-sky-100 px-4 sm:px-8 lg:px-12 py-3 shadow-sm transition-all print:hidden">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+    <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-sky-100 py-3 transition-all print:hidden">
+      <div className="w-full px-4 sm:px-8 lg:px-12 flex items-center justify-between gap-6">
         
-        {/* Brand / Logo */}
-        <div 
-          onClick={() => setActivePage('home')}
-          className="flex items-center gap-3 cursor-pointer group"
-        >
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-600 to-sky-400 flex items-center justify-center text-white shadow-md shadow-sky-200 group-hover:scale-105 transition-transform">
-            <span className="font-black text-lg">K</span>
+        {/* Brand / Title (Kiri) */}
+        <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => setActivePage('home')}>
+          <div className="w-10 h-10 rounded-2xl bg-sky-500 text-white flex items-center justify-center font-black text-lg shadow-md shadow-sky-200">
+            K
           </div>
           <div>
-            <h1 className="font-extrabold text-sm sm:text-base text-sky-950 tracking-tight leading-tight group-hover:text-sky-600 transition-colors">
-              UMKM Kutowinangun Kidul
-            </h1>
-            <p className="text-[11px] font-medium text-sky-700">
-              Kecamatan Tingkir, Kota Salatiga
-            </p>
+            <h1 className="text-sm font-black text-sky-950 tracking-tight">Kutowinangun Kidul</h1>
+            <p className="text-[10px] text-sky-600 font-bold uppercase tracking-wider">Katalog UMKM 2026</p>
           </div>
         </div>
 
-        {/* Navigation Tabs & Actions */}
-        <div className="flex items-center flex-wrap gap-2">
-          
-          {/* Navigasi 3 Halaman Utama */}
-          <div className="bg-sky-50/80 p-1 rounded-2xl border border-sky-100 flex items-center gap-1">
-            <button
-              onClick={() => setActivePage('home')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activePage === 'home'
-                  ? 'bg-white text-sky-900 shadow-sm'
-                  : 'text-sky-700 hover:text-sky-950 hover:bg-sky-100/50'
-              }`}
-            >
-              <Home className="w-3.5 h-3.5" />
-              <span>Beranda</span>
-            </button>
-
-            <button
-              onClick={() => setActivePage('grid_catalog')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activePage === 'grid_catalog'
-                  ? 'bg-white text-sky-900 shadow-sm'
-                  : 'text-sky-700 hover:text-sky-950 hover:bg-sky-100/50'
-              }`}
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-              <span>Katalog</span>
-            </button>
-
-            <button
-              onClick={() => setActivePage('official_table')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activePage === 'official_table'
-                  ? 'bg-white text-sky-900 shadow-sm'
-                  : 'text-sky-700 hover:text-sky-950 hover:bg-sky-100/50'
-              }`}
-            >
-              <Table className="w-3.5 h-3.5" />
-              <span>Tabel Resmi</span>
-            </button>
-          </div>
-
-          {/* Tombol Akses Admin */}
-          <div className="flex items-center gap-2 pl-2 border-l border-sky-100">
-            {isAdmin ? (
-              <>
-                <button
-                  onClick={() => setIsAddModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-sm transition-all cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Tambah UMKM</span>
-                </button>
-                <button
-                  onClick={handleAdminLogout}
-                  className="inline-flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs px-3 py-2 rounded-xl transition-all cursor-pointer border border-rose-200"
-                  title="Keluar Mode Admin"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Logout</span>
-                </button>
-              </>
-            ) : (
+        {/* Minimalist Navigation Bar - Rata Kanan (ml-auto) */}
+        <nav className="hidden md:flex items-center gap-6 lg:gap-8 ml-auto">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activePage === item.id;
+            return (
               <button
-                onClick={() => setIsAdminModalOpen(true)}
-                className="inline-flex items-center gap-1.5 bg-sky-100/80 hover:bg-sky-200/80 text-sky-800 font-bold text-xs px-3 py-2 rounded-xl transition-all cursor-pointer border border-sky-200/60"
+                key={item.id}
+                onClick={() => setActivePage(item.id)}
+                className={`relative py-2 text-xs sm:text-sm font-semibold flex items-center gap-2 transition-colors cursor-pointer ${
+                  isActive
+                    ? 'text-sky-600 font-bold'
+                    : 'text-slate-600 hover:text-sky-600'
+                }`}
               >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>Admin</span>
+                <Icon className={`w-4 h-4 ${isActive ? 'text-sky-600' : 'text-slate-400'}`} />
+                <span>{item.label}</span>
+                
+                {/* Indikator Garis Bawah saat Aktif */}
+                {isActive && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-sky-500 rounded-full transition-all duration-300" />
+                )}
               </button>
-            )}
-          </div>
+            );
+          })}
+        </nav>
 
+        {/* Admin Action Buttons (Paling Kanan) */}
+        <div className="flex items-center gap-2 shrink-0">
+          {isAdmin ? (
+            <>
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-xs transition-all cursor-pointer"
+              >
+                + Tambah UMKM
+              </button>
+              <button
+                onClick={handleAdminLogout}
+                className="bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs px-3 py-2.5 rounded-xl border border-rose-100 transition-all cursor-pointer"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setIsAdminModalOpen(true)}
+              className="bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-xs px-4 py-2.5 rounded-xl border border-sky-100 transition-all cursor-pointer"
+            >
+              Mode Admin
+            </button>
+          )}
         </div>
+
+      </div>
+
+      {/* Mobile Navigation */}
+      <div className="flex md:hidden justify-around border-t border-sky-50 mt-3 pt-2 px-4">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activePage === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActivePage(item.id)}
+              className={`relative py-2 text-xs font-semibold flex flex-col items-center gap-1 transition-colors cursor-pointer ${
+                isActive ? 'text-sky-600 font-bold' : 'text-slate-500'
+              }`}
+            >
+              <Icon className={`w-4 h-4 ${isActive ? 'text-sky-600' : 'text-slate-400'}`} />
+              <span>{item.label}</span>
+              {isActive && (
+                <span className="absolute bottom-0 w-8 h-0.5 bg-sky-500 rounded-full" />
+              )}
+            </button>
+          );
+        })}
       </div>
     </header>
   );

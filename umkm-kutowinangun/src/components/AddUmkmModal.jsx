@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Loader2, MapPin, Phone, Upload, Image as ImageIcon, Images } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,6 +59,7 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
     if (!formData.namaUsaha || !formData.pemilik) return;
 
     setIsSubmitting(true);
+    const toastId = toast.loading('Menyimpan data UMKM ke database...');
 
     const extractedRw = formData.rtRw.includes('RW') 
       ? formData.rtRw.split('RW')[1].trim() 
@@ -115,9 +117,11 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
       const savedUmkm = await response.json();
       setUmkmList([savedUmkm, ...umkmList]);
       setIsAddModalOpen(false);
+
+      toast.success('✨ Data UMKM baru berhasil disimpan!', { id: toastId });
     } catch (error) {
       console.error('Error saat menambah UMKM:', error);
-      alert('Gagal menyimpan data ke database. Pastikan server backend berjalan!');
+      toast.error('Gagal menyimpan data ke database! Pastikan server aktif.', { id: toastId });
     } finally {
       setIsSubmitting(false);
     }

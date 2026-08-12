@@ -6,12 +6,14 @@ import SearchFilter from './components/SearchFilter';
 import TableView from './components/TableView';
 import GridView from './components/GridView';
 import { Building2, Loader2, Store } from 'lucide-react';
+import toast, { Toaster } from 'react-hot-toast';
+import Swal from 'sweetalert2';
 
 // Base URL API Dinamis dengan Sanitasi Format URL
 const RAW_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const API_BASE_URL = (() => {
-  let url = RAW_API_URL.trim().replace(/\/+$/, ''); // Hapus trailing slash jika ada
+  let url = RAW_API_URL.trim().replace(/\/+$/, '');
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
     url = `https://${url}`;
   }
@@ -50,9 +52,13 @@ export default function App() {
       setIsAdmin(true);
       localStorage.setItem('isAdminLoggedIn', 'true');
       setIsAdminModalOpen(false);
-      alert('Berhasil masuk sebagai Admin!');
+      toast.success('Berhasil masuk sebagai Admin!', {
+        style: { borderRadius: '16px', background: '#0284c7', color: '#fff' }
+      });
     } else {
-      alert('Password Admin Salah!');
+      toast.error('Password Admin Salah!', {
+        style: { borderRadius: '16px', background: '#e11d48', color: '#fff' }
+      });
     }
   };
 
@@ -60,7 +66,10 @@ export default function App() {
   const handleAdminLogout = () => {
     setIsAdmin(false);
     localStorage.removeItem('isAdminLoggedIn');
-    alert('Anda telah keluar dari Mode Admin.');
+    toast('Anda telah keluar dari Mode Admin.', {
+      icon: '👋',
+      style: { borderRadius: '16px', background: '#0f172a', color: '#fff' }
+    });
   };
 
   // Fetch Data dari Server Express
@@ -81,14 +90,32 @@ export default function App() {
       });
   }, []);
 
-  // Fitur Hapus Data
+  // Fitur Hapus Data dengan Dialog Konfirmasi SweetAlert2 & Toast Notifikasi
   const handleDeleteUmkm = async (id) => {
     if (!id) {
-      alert('Gagal menghapus: ID data tidak ditemukan!');
+      toast.error('Gagal menghapus: ID data tidak ditemukan!');
       return;
     }
 
-    if (!window.confirm('Apakah Anda yakin ingin menghapus data UMKM ini?')) return;
+    const confirmResult = await Swal.fire({
+      title: 'Hapus Data UMKM?',
+      text: 'Data yang dihapus tidak dapat dikembalikan!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e11d48',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Ya, Hapus!',
+      cancelButtonText: 'Batal',
+      customClass: {
+        popup: 'rounded-3xl font-sans',
+        confirmButton: 'rounded-xl text-xs font-bold px-4 py-2.5',
+        cancelButton: 'rounded-xl text-xs font-bold px-4 py-2.5'
+      }
+    });
+
+    if (!confirmResult.isConfirmed) return;
+
+    const toastId = toast.loading('Menghapus data UMKM...');
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/umkm/${id}`, {
@@ -106,18 +133,19 @@ export default function App() {
         if (selectedUmkm && selectedUmkm._id === id) {
           setSelectedUmkm(null);
         }
-        alert('Data UMKM berhasil dihapus!');
+        toast.success('Data UMKM berhasil dihapus!', { id: toastId });
       } else {
-        alert(`Gagal Menghapus [Error ${res.status}]: ${data.error || data.message || 'Format ID tidak valid'}`);
+        toast.error(`Gagal Menghapus: ${data.error || data.message || 'Format ID tidak valid'}`, { id: toastId });
       }
     } catch (err) {
       console.error('Error saat menghapus:', err);
-      alert('Terjadi kesalahan koneksi ke server backend!');
+      toast.error('Terjadi kesalahan koneksi ke server backend!', { id: toastId });
     }
   };
 
   // Fitur Edit Data (Mendukung FormData / Upload File & JSON)
   const handleEditUmkm = async (id, updatedData) => {
+    const toastId = toast.loading('Memperbarui data UMKM...');
     try {
       const isFormData = updatedData instanceof FormData;
 
@@ -140,13 +168,13 @@ export default function App() {
         }
 
         setEditingUmkm(null);
-        alert('✨ Data UMKM berhasil diperbarui!');
+        toast.success('✨ Data UMKM berhasil diperbarui!', { id: toastId });
       } else {
-        alert(`Gagal mengupdate [Error ${res.status}]: ${data.error || data.message || 'Terjadi kesalahan pada server'}`);
+        toast.error(`Gagal mengupdate: ${data.error || data.message || 'Terjadi kesalahan pada server'}`, { id: toastId });
       }
     } catch (err) {
       console.error('Error saat mengedit:', err);
-      alert('Terjadi kesalahan koneksi saat memperbarui data. Pastikan server backend berjalan.');
+      toast.error('Terjadi kesalahan koneksi saat memperbarui data.', { id: toastId });
     }
   };
 
@@ -180,6 +208,16 @@ export default function App() {
   return (
     <div className="min-h-screen bg-sky-50/20 text-sky-950 font-sans flex flex-col selection:bg-sky-100 selection:text-sky-900 print:bg-white print:text-black">
       
+      {/* Component Notifikasi Toast */}
+      <Toaster 
+        position="top-center" 
+        reverseOrder={false}
+        toastOptions={{
+          className: 'font-sans text-xs font-bold rounded-2xl shadow-xl',
+          duration: 3000,
+        }}
+      />
+
       {/* Background Graphic Orbs */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden print:hidden">
         <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-sky-100/60 blur-3xl"></div>
