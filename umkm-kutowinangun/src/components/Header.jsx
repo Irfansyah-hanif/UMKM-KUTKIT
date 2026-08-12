@@ -1,11 +1,12 @@
 import React from 'react';
-import { Home, LayoutGrid, TableProperties } from 'lucide-react';
+import { Home, LayoutGrid, TableProperties, GraduationCap } from 'lucide-react';
 
 export default function Header({ activePage, setActivePage, setIsAddModalOpen, isAdmin, setIsAdminModalOpen, handleAdminLogout }) {
   const navItems = [
     { id: 'home', label: 'Beranda', icon: Home },
     { id: 'grid_catalog', label: 'Katalog', icon: LayoutGrid },
     { id: 'official_table', label: 'Tabel Resmi', icon: TableProperties },
+    { id: 'education', label: 'Edukasi UMKM', icon: GraduationCap },
   ];
 
   return (

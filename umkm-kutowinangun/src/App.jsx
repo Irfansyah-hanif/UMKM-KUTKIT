@@ -5,6 +5,7 @@ import HistorySection from './components/HistorySection';
 import SearchFilter from './components/SearchFilter';
 import TableView from './components/TableView';
 import GridView from './components/GridView';
+import EducationPage from './components/EducationPage';
 import { Building2, Loader2, Store } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import Swal from 'sweetalert2';
@@ -30,8 +31,14 @@ export default function App() {
   const [umkmList, setUmkmList] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // State Navigasi Halaman: 'home' | 'grid_catalog' | 'official_table'
-  const [activePage, setActivePage] = useState('home'); 
+  // 1. Inisialisasi activePage dari Query Parameter URL atau localStorage (Fallback: 'home')
+  const [activePage, setActivePage] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const pageFromUrl = params.get('page');
+    if (pageFromUrl) return pageFromUrl;
+    
+    return localStorage.getItem('activePage') || 'home';
+  });
 
   const [activeTab, setActiveTab] = useState('semua');
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,6 +52,15 @@ export default function App() {
     return localStorage.getItem('isAdminLoggedIn') === 'true';
   });
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+
+  // 2. Simpan activePage ke URL Query Parameter & localStorage saat terjadi perubahan halaman
+  useEffect(() => {
+    localStorage.setItem('activePage', activePage);
+    
+    const url = new URL(window.location);
+    url.searchParams.set('page', activePage);
+    window.history.replaceState({}, '', url);
+  }, [activePage]);
 
   // Handler Login Admin
   const handleAdminLogin = (passwordInput) => {
@@ -90,7 +106,7 @@ export default function App() {
       });
   }, []);
 
-  // Fitur Hapus Data dengan Dialog Konfirmasi SweetAlert2 & Toast Notifikasi
+  // Fitur Hapus Data
   const handleDeleteUmkm = async (id) => {
     if (!id) {
       toast.error('Gagal menghapus: ID data tidak ditemukan!');
@@ -143,7 +159,7 @@ export default function App() {
     }
   };
 
-  // Fitur Edit Data (Mendukung FormData / Upload File & JSON)
+  // Fitur Edit Data
   const handleEditUmkm = async (id, updatedData) => {
     const toastId = toast.loading('Memperbarui data UMKM...');
     try {
@@ -183,12 +199,10 @@ export default function App() {
     const safeList = Array.isArray(umkmList) ? umkmList : [];
 
     return safeList.filter(item => {
-      // Normalisasi nilai tab dan nilai kategori/kelompok usaha
       const tabKey = activeTab.toLowerCase().trim();
       const itemKategori = (item.kategori || '').toLowerCase().trim();
       const itemKelompok = (item.kelompokUsaha || '').toLowerCase().trim();
 
-      // Cek apakah tab cocok dengan kategori ATAU kelompokUsaha
       const matchCategory = 
         tabKey === 'semua' || 
         itemKategori === tabKey || 
@@ -276,7 +290,6 @@ export default function App() {
               </button>
             </div>
 
-            {/* Menampilkan 6 Kartu Katalog Acak */}
             <GridView 
               filteredUmkm={randomFeaturedUmkm} 
               setSelectedUmkm={setSelectedUmkm} 
@@ -284,7 +297,6 @@ export default function App() {
               onEdit={isAdmin ? (item) => setEditingUmkm(item) : null}
             />
 
-            {/* Tombol CTA Ke Katalog Lengkap */}
             <div className="pt-4 text-center">
               <button
                 onClick={() => setActivePage('grid_catalog')}
@@ -334,7 +346,12 @@ export default function App() {
         </main>
       )}
 
-      {/* MODAL WRAPPED IN SUSPENSE FOR LAZY LOADING */}
+      {/* 4. HALAMAN EDUKASI UMKM */}
+      {activePage === 'education' && (
+        <EducationPage />
+      )}
+
+      {/* MODAL WRAPPED IN SUSPENSE */}
       <Suspense fallback={null}>
         {selectedUmkm && (
           <UmkmDetailModal 
