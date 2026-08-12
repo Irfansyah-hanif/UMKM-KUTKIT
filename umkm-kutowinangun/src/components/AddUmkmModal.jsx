@@ -7,16 +7,24 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
   const [fileGambar, setFileGambar] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
-  // State untuk menyimpan galeri foto produk
   const [galeriFiles, setGaleriFiles] = useState([]);
   const [galeriPreviews, setGaleriPreviews] = useState([]);
+
+  // Daftar Opsi Kelompok Usaha / Kategori Terpadu
+  const opsiKategori = [
+    'KULINER',
+    'PERDAGANGAN',
+    'PRODUKSI/NON PERTANIAN',
+    'JASA',
+    'KONVEKSI'
+  ];
 
   const [formData, setFormData] = useState({
     namaUsaha: '',
     pemilik: '',
     jenisKelamin: 'L',
     usia: 35,
-    kategori: 'Makanan',
+    kategori: 'PERDAGANGAN', // Kategori mengikuti Opsi Kelompok Usaha
     kelompokUsaha: 'PERDAGANGAN',
     jenisBarangJasa: '',
     alamat: '',
@@ -29,7 +37,14 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
     produkUnggulanStr: ''
   });
 
-  // Handler Foto Sampul Utama
+  const handleKategoriChange = (val) => {
+    setFormData(prev => ({
+      ...prev,
+      kelompokUsaha: val,
+      kategori: val // Menyinkronkan kategori agar badge kartu berubah otomatis
+    }));
+  };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -38,7 +53,6 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
     }
   };
 
-  // Handler Galeri Foto Produk
   const handleGaleriChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length > 0) {
@@ -48,7 +62,6 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
     }
   };
 
-  // Handler Hapus 1 Foto Galeri
   const handleRemoveGaleriItem = (index) => {
     setGaleriFiles(prev => prev.filter((_, i) => i !== index));
     setGaleriPreviews(prev => prev.filter((_, i) => i !== index));
@@ -71,9 +84,9 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
     bodyFormData.append('pemilik', formData.pemilik);
     bodyFormData.append('jenisKelamin', formData.jenisKelamin);
     bodyFormData.append('usia', parseInt(formData.usia) || '-');
-    bodyFormData.append('kategori', formData.kategori);
-    bodyFormData.append('subKategori', formData.kelompokUsaha || 'PERDAGANGAN');
-    bodyFormData.append('kelompokUsaha', formData.kelompokUsaha || 'PERDAGANGAN');
+    bodyFormData.append('kategori', formData.kategori); // Terisi otomatis sesuai opsi terpilih
+    bodyFormData.append('subKategori', formData.kelompokUsaha);
+    bodyFormData.append('kelompokUsaha', formData.kelompokUsaha);
     bodyFormData.append('jenisBarangJasa', formData.jenisBarangJasa || 'PRODUK UMKM');
     bodyFormData.append('alamat', formData.alamat || 'Kutowinangun Kidul');
     bodyFormData.append('rtRw', formData.rtRw);
@@ -209,7 +222,7 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
               <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-sky-200 rounded-2xl cursor-pointer bg-sky-50/30 hover:bg-sky-50 transition-all">
                 <div className="flex flex-col items-center justify-center">
                   <Upload className="w-4 h-4 text-sky-500 mb-0.5" />
-                  <p className="text-[11px] text-sky-800 font-semibold">Klik untuk pilih foto produk/soto (Bisa {">"}1 file)</p>
+                  <p className="text-[11px] text-sky-800 font-semibold">Klik untuk pilih foto produk (Bisa {">"}1 file)</p>
                   <p className="text-[9px] text-sky-500">Maksimal 8 foto galeri</p>
                 </div>
                 <input 
@@ -229,7 +242,7 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
             <input
               type="text"
               required
-              placeholder="Contoh: Soto Ayam Pak Yono"
+              placeholder="Contoh: Bengkel Ketok Magic Jaya"
               value={formData.namaUsaha}
               onChange={e => setFormData({ ...formData, namaUsaha: e.target.value })}
               className="w-full px-3.5 py-2.5 bg-sky-50/30 border border-sky-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-300 font-medium"
@@ -271,19 +284,18 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
             </div>
           </div>
 
+          {/* KELOMPOK USAHA / KATEGORI */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block font-bold text-sky-950 mb-1">Kelompok Usaha</label>
+              <label className="block font-bold text-sky-950 mb-1">Kelompok Usaha *</label>
               <select
                 value={formData.kelompokUsaha}
-                onChange={e => setFormData({ ...formData, kelompokUsaha: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-sky-50/30 border border-sky-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-300 font-medium cursor-pointer"
+                onChange={e => handleKategoriChange(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-sky-50/30 border border-sky-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-300 font-bold text-sky-900 cursor-pointer"
               >
-                <option value="KULINER">KULINER</option>
-                <option value="PERDAGANGAN">PERDAGANGAN</option>
-                <option value="PRODUKSI/NON PERTANIAN">PRODUKSI/NON PERTANIAN</option>
-                <option value="JASA">JASA</option>
-                <option value="KONVEKSI">KONVEKSI</option>
+                {opsiKategori.map((opt) => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -303,7 +315,7 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
             <input
               type="text"
               required
-              placeholder="Contoh: SOTO AYAM / KULINER LOKAL"
+              placeholder="Contoh: JASA PERBAIKAN MOBIL / KONVEKSI KAOS"
               value={formData.jenisBarangJasa}
               onChange={e => setFormData({ ...formData, jenisBarangJasa: e.target.value })}
               className="w-full px-3.5 py-2.5 bg-sky-50/30 border border-sky-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-300 font-medium"
@@ -314,14 +326,13 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
             <label className="block font-bold text-sky-950 mb-1">Alamat Usaha Lengkap</label>
             <input
               type="text"
-              placeholder="Jl. Serayu No..."
+              placeholder="Jl. Solo - Purwodadi..."
               value={formData.alamat}
               onChange={e => setFormData({ ...formData, alamat: e.target.value })}
               className="w-full px-3.5 py-2.5 bg-sky-50/30 border border-sky-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-300 font-medium"
             />
           </div>
 
-          {/* INPUT KONTAK */}
           <div>
             <label className="block font-bold text-sky-950 mb-1 flex items-center gap-1">
               <Phone className="w-3.5 h-3.5 text-sky-500" />
@@ -336,7 +347,6 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
             />
           </div>
 
-          {/* INPUT LINK GOOGLE MAPS */}
           <div>
             <label className="block font-bold text-sky-950 mb-1 flex items-center gap-1">
               <MapPin className="w-3.5 h-3.5 text-sky-500" />
