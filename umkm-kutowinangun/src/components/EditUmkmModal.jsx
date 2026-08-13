@@ -19,7 +19,6 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
     namaUsaha: '',
     pemilik: '',
     jenisKelamin: 'L',
-    usia: 35,
     kategori: 'PERDAGANGAN',
     kelompokUsaha: 'PERDAGANGAN',
     jenisBarangJasa: '',
@@ -40,7 +39,6 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
         namaUsaha: editingUmkm.namaUsaha || '',
         pemilik: editingUmkm.pemilik || '',
         jenisKelamin: editingUmkm.jenisKelamin || 'L',
-        usia: editingUmkm.usia || 35,
         kategori: editingUmkm.kategori || 'PERDAGANGAN',
         kelompokUsaha: editingUmkm.kelompokUsaha || 'PERDAGANGAN',
         jenisBarangJasa: editingUmkm.jenisBarangJasa || '',
@@ -136,7 +134,6 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
     bodyFormData.append('namaUsaha', formData.namaUsaha);
     bodyFormData.append('pemilik', formData.pemilik);
     bodyFormData.append('jenisKelamin', formData.jenisKelamin);
-    bodyFormData.append('usia', parseInt(formData.usia) || '-');
     bodyFormData.append('kategori', formData.kelompokUsaha);
     bodyFormData.append('kelompokUsaha', formData.kelompokUsaha);
     bodyFormData.append('jenisBarangJasa', formData.jenisBarangJasa);
@@ -293,8 +290,9 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="sm:col-span-1">
+          {/* NAMA PENGUSAHA & JENIS KELAMIN (FIELD USIA SUDAH DIHAPUS) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
               <label className="block font-bold text-sky-950 mb-1">Nama Pengusaha *</label>
               <input
                 type="text"
@@ -314,15 +312,6 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
                 <option value="L">Laki-Laki (L)</option>
                 <option value="P">Perempuan (P)</option>
               </select>
-            </div>
-            <div>
-              <label className="block font-bold text-sky-950 mb-1">Usia (Th)</label>
-              <input
-                type="text"
-                value={formData.usia}
-                onChange={e => setFormData({ ...formData, usia: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-sky-50/30 border border-sky-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-300 font-medium"
-              />
             </div>
           </div>
 

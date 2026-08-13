@@ -26,7 +26,6 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
     namaUsaha: '',
     pemilik: '',
     jenisKelamin: 'L',
-    usia: 35,
     kategori: 'PERDAGANGAN',
     kelompokUsaha: 'PERDAGANGAN',
     jenisBarangJasa: '',
@@ -107,7 +106,6 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
     bodyFormData.append('namaUsaha', formData.namaUsaha);
     bodyFormData.append('pemilik', formData.pemilik);
     bodyFormData.append('jenisKelamin', formData.jenisKelamin);
-    bodyFormData.append('usia', parseInt(formData.usia) || '-');
     bodyFormData.append('kategori', formData.kategori);
     bodyFormData.append('subKategori', formData.kelompokUsaha);
     bodyFormData.append('kelompokUsaha', formData.kelompokUsaha);
@@ -285,8 +283,9 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="sm:col-span-1">
+          {/* NAMA PENGUSAHA & JENIS KELAMIN */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
               <label className="block font-bold text-sky-950 mb-1">Nama Pengusaha *</label>
               <input
                 type="text"
@@ -307,16 +306,6 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
                 <option value="L">Laki-Laki (L)</option>
                 <option value="P">Perempuan (P)</option>
               </select>
-            </div>
-            <div>
-              <label className="block font-bold text-sky-950 mb-1">Usia (Th)</label>
-              <input
-                type="text"
-                placeholder="Contoh: 45"
-                value={formData.usia}
-                onChange={e => setFormData({ ...formData, usia: e.target.value })}
-                className="w-full px-3.5 py-2.5 bg-sky-50/30 border border-sky-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-300 font-medium"
-              />
             </div>
           </div>
 
