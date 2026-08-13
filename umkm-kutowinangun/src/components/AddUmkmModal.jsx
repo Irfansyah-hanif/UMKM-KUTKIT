@@ -10,6 +10,9 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
   const [galeriFiles, setGaleriFiles] = useState([]);
   const [galeriPreviews, setGaleriPreviews] = useState([]);
 
+  // Batas Maksimal Ukuran File per Gambar (2 MB)
+  const MAX_FILE_SIZE = 2 * 1024 * 1024; 
+
   // Daftar Opsi Kelompok Usaha / Kategori Terpadu
   const opsiKategori = [
     'KULINER',
@@ -24,7 +27,7 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
     pemilik: '',
     jenisKelamin: 'L',
     usia: 35,
-    kategori: 'PERDAGANGAN', // Kategori mengikuti Opsi Kelompok Usaha
+    kategori: 'PERDAGANGAN',
     kelompokUsaha: 'PERDAGANGAN',
     jenisBarangJasa: '',
     alamat: '',
@@ -41,25 +44,44 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
     setFormData(prev => ({
       ...prev,
       kelompokUsaha: val,
-      kategori: val // Menyinkronkan kategori agar badge kartu berubah otomatis
+      kategori: val
     }));
   };
 
+  // Validasi Foto Utama Maksimal 2 MB
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error('Foto utama terlalu besar! Maksimal ukuran file adalah 2 MB.');
+        e.target.value = ''; // Reset input file
+        return;
+      }
       setFileGambar(file);
       setImagePreview(URL.createObjectURL(file));
     }
   };
 
+  // Validasi Foto Galeri Maksimal 2 MB per File
   const handleGaleriChange = (e) => {
     const files = Array.from(e.target.files);
-    if (files.length > 0) {
-      setGaleriFiles(prev => [...prev, ...files]);
-      const newPreviews = files.map(file => URL.createObjectURL(file));
+    const validFiles = [];
+
+    for (const file of files) {
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`File "${file.name}" dilewati karena ukurannya melebihi 2 MB!`);
+      } else {
+        validFiles.push(file);
+      }
+    }
+
+    if (validFiles.length > 0) {
+      setGaleriFiles(prev => [...prev, ...validFiles]);
+      const newPreviews = validFiles.map(file => URL.createObjectURL(file));
       setGaleriPreviews(prev => [...prev, ...newPreviews]);
     }
+
+    e.target.value = ''; // Reset input file agar bisa pilih file yang sama jika perlu
   };
 
   const handleRemoveGaleriItem = (index) => {
@@ -84,7 +106,7 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
     bodyFormData.append('pemilik', formData.pemilik);
     bodyFormData.append('jenisKelamin', formData.jenisKelamin);
     bodyFormData.append('usia', parseInt(formData.usia) || '-');
-    bodyFormData.append('kategori', formData.kategori); // Terisi otomatis sesuai opsi terpilih
+    bodyFormData.append('kategori', formData.kategori);
     bodyFormData.append('subKategori', formData.kelompokUsaha);
     bodyFormData.append('kelompokUsaha', formData.kelompokUsaha);
     bodyFormData.append('jenisBarangJasa', formData.jenisBarangJasa || 'PRODUK UMKM');
@@ -125,7 +147,12 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
         body: bodyFormData
       });
 
-      if (!response.ok) throw new Error('Gagal menyimpan data ke server');
+      if (!response.ok) {
+        if (response.status === 413) {
+          throw new Error('Ukuran total data/foto terlalu besar! Coba kurangi foto galeri.');
+        }
+        throw new Error('Gagal menyimpan data ke server');
+      }
 
       const savedUmkm = await response.json();
       setUmkmList([savedUmkm, ...umkmList]);
@@ -134,7 +161,7 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
       toast.success('✨ Data UMKM baru berhasil disimpan!', { id: toastId });
     } catch (error) {
       console.error('Error saat menambah UMKM:', error);
-      toast.error('Gagal menyimpan data ke database! Pastikan server aktif.', { id: toastId });
+      toast.error(error.message || 'Gagal menyimpan data ke database!', { id: toastId });
     } finally {
       setIsSubmitting(false);
     }
@@ -160,9 +187,12 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
         <form onSubmit={handleAddUmkm} className="space-y-4 text-xs">
           {/* UPLOAD FOTO UTAMA */}
           <div>
-            <label className="block font-bold text-sky-950 mb-1 flex items-center gap-1">
-              <ImageIcon className="w-3.5 h-3.5 text-sky-500" />
-              <span>Foto Utama Tempat Usaha</span>
+            <label className="block font-bold text-sky-950 mb-1 flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <ImageIcon className="w-3.5 h-3.5 text-sky-500" />
+                <span>Foto Utama Tempat Usaha</span>
+              </span>
+              <span className="text-[10px] text-sky-500 font-normal">(Maks. 2 MB)</span>
             </label>
             
             {imagePreview && (
@@ -183,6 +213,7 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
                 <div className="flex flex-col items-center justify-center">
                   <Upload className="w-4 h-4 text-sky-500 mb-0.5" />
                   <p className="text-[11px] text-sky-800 font-semibold">Unggah Foto Utama Tempat Usaha</p>
+                  <p className="text-[9px] text-sky-500">Maksimal 2 MB</p>
                 </div>
                 <input 
                   type="file" 
@@ -196,9 +227,12 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
 
           {/* UPLOAD GALERI FOTO PRODUK */}
           <div>
-            <label className="block font-bold text-sky-950 mb-1 flex items-center gap-1">
-              <Images className="w-3.5 h-3.5 text-sky-500" />
-              <span>Foto Produk / Makanan / Suasana Usaha (Pilih Banyak)</span>
+            <label className="block font-bold text-sky-950 mb-1 flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <Images className="w-3.5 h-3.5 text-sky-500" />
+                <span>Foto Produk / Makanan / Suasana Usaha</span>
+              </span>
+              <span className="text-[10px] text-sky-500 font-normal">(Maks. 2 MB / file)</span>
             </label>
 
             {galeriPreviews.length > 0 && (
@@ -222,8 +256,8 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
               <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-sky-200 rounded-2xl cursor-pointer bg-sky-50/30 hover:bg-sky-50 transition-all">
                 <div className="flex flex-col items-center justify-center">
                   <Upload className="w-4 h-4 text-sky-500 mb-0.5" />
-                  <p className="text-[11px] text-sky-800 font-semibold">Klik untuk pilih foto produk (Bisa {">"}1 file)</p>
-                  <p className="text-[9px] text-sky-500">Maksimal 8 foto galeri</p>
+                  <p className="text-[11px] text-sky-800 font-semibold">Klik untuk pilih foto produk</p>
+                  <p className="text-[9px] text-sky-500">Maksimal 2 MB per foto</p>
                 </div>
                 <input 
                   type="file" 
