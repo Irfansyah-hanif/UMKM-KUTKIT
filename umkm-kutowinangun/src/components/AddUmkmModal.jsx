@@ -96,9 +96,11 @@ export default function AddUmkmModal({ setIsAddModalOpen, umkmList, setUmkmList 
     setIsSubmitting(true);
     const toastId = toast.loading('Menyimpan data UMKM ke database...');
 
-    const extractedRw = formData.rtRw.includes('RW') 
-      ? formData.rtRw.split('RW')[1].trim() 
-      : '01';
+    // EKSTRAKSI RW PRESISI: Mengekstrak angka RW dari string RT/RW (misal "RT 02 / RW 01" -> "01")
+    const matchRw = formData.rtRw.match(/RW\s*(\d+)/i);
+    const extractedRw = matchRw 
+      ? matchRw[1].padStart(2, '0') 
+      : (formData.rw || '01').padStart(2, '0');
 
     const bodyFormData = new FormData();
     bodyFormData.append('no', umkmList.length + 1);

@@ -194,7 +194,7 @@ export default function App() {
     }
   };
 
-  // Safe Filtering untuk Halaman Katalog & Tabel
+  // Safe Filtering untuk Halaman Katalog & Tabel (Termasuk Perbaikan Filter RW)
   const filteredUmkm = useMemo(() => {
     const safeList = Array.isArray(umkmList) ? umkmList : [];
 
@@ -208,7 +208,27 @@ export default function App() {
         itemKategori === tabKey || 
         itemKelompok === tabKey;
 
-      const matchRw = selectedRw === 'semua' || item.rw === selectedRw;
+      // LOGIKA PENCOCOKAN FILTER RW YANG DIPERBAIKI
+      let matchRw = true;
+      if (selectedRw !== 'semua') {
+        const targetRw = parseInt(selectedRw, 10);
+        let itemRwNum = null;
+
+        // 1. Ekstrak angka dari field rw murni
+        if (item.rw !== undefined && item.rw !== null && item.rw !== '') {
+          const match = String(item.rw).match(/\d+/);
+          if (match) itemRwNum = parseInt(match[0], 10);
+        }
+
+        // 2. Jika field rw kosong, ekstrak dari string rtRw (misal: "RT 01 / RW 02")
+        if (itemRwNum === null && item.rtRw) {
+          const match = String(item.rtRw).match(/RW\s*(\d+)/i);
+          if (match) itemRwNum = parseInt(match[1], 10);
+        }
+
+        matchRw = (itemRwNum === targetRw);
+      }
+
       const query = searchQuery.toLowerCase().trim();
 
       const matchQuery = 

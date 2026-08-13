@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, MapPin, Phone, Upload, Image as ImageIcon, Images } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -11,12 +12,15 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
   const [galeriPreviews, setGaleriPreviews] = useState([]);
   const [existingGaleri, setExistingGaleri] = useState([]);
 
+  // Batas Maksimal Ukuran File per Gambar (2 MB)
+  const MAX_FILE_SIZE = 2 * 1024 * 1024;
+
   const [formData, setFormData] = useState({
     namaUsaha: '',
     pemilik: '',
     jenisKelamin: 'L',
     usia: 35,
-    kategori: 'Makanan',
+    kategori: 'PERDAGANGAN',
     kelompokUsaha: 'PERDAGANGAN',
     jenisBarangJasa: '',
     alamat: '',
@@ -37,7 +41,7 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
         pemilik: editingUmkm.pemilik || '',
         jenisKelamin: editingUmkm.jenisKelamin || 'L',
         usia: editingUmkm.usia || 35,
-        kategori: editingUmkm.kategori || 'Makanan',
+        kategori: editingUmkm.kategori || 'PERDAGANGAN',
         kelompokUsaha: editingUmkm.kelompokUsaha || 'PERDAGANGAN',
         jenisBarangJasa: editingUmkm.jenisBarangJasa || '',
         alamat: editingUmkm.alamat || '',
@@ -69,23 +73,40 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
     }
   }, [editingUmkm]);
 
-  // Handler Foto Utama
+  // Handler Foto Utama dengan Validasi 2 MB
   const handleImageChange = (e) => {
     const file = e.target.files && e.target.files[0];
     if (file) {
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error('Foto utama terlalu besar! Maksimal ukuran file adalah 2 MB.');
+        e.target.value = '';
+        return;
+      }
       setFileGambar(file);
       setImagePreview(URL.createObjectURL(file));
     }
   };
 
-  // Handler Galeri Tambahan
+  // Handler Galeri Tambahan dengan Validasi 2 MB per File
   const handleGaleriChange = (e) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
-    if (files.length > 0) {
-      setGaleriFiles(prev => [...(prev || []), ...files]);
-      const newPreviews = files.map(file => URL.createObjectURL(file));
+    const validFiles = [];
+
+    for (const file of files) {
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(`File "${file.name}" dilewati karena ukurannya melebihi 2 MB!`);
+      } else {
+        validFiles.push(file);
+      }
+    }
+
+    if (validFiles.length > 0) {
+      setGaleriFiles(prev => [...(prev || []), ...validFiles]);
+      const newPreviews = validFiles.map(file => URL.createObjectURL(file));
       setGaleriPreviews(prev => [...(prev || []), ...newPreviews]);
     }
+
+    e.target.value = '';
   };
 
   // Handler Hapus Galeri Tambahan Baru
@@ -105,17 +126,23 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
 
     setIsSubmitting(true);
 
+    // EKSTRAKSI RW PRESISI: Mengekstrak angka RW dari string RT/RW (misal "RT 02 / RW 01" -> "01")
+    const matchRw = formData.rtRw ? formData.rtRw.match(/RW\s*(\d+)/i) : null;
+    const extractedRw = matchRw 
+      ? matchRw[1].padStart(2, '0') 
+      : (formData.rw || '01').padStart(2, '0');
+
     const bodyFormData = new FormData();
     bodyFormData.append('namaUsaha', formData.namaUsaha);
     bodyFormData.append('pemilik', formData.pemilik);
     bodyFormData.append('jenisKelamin', formData.jenisKelamin);
     bodyFormData.append('usia', parseInt(formData.usia) || '-');
-    bodyFormData.append('kategori', formData.kategori);
+    bodyFormData.append('kategori', formData.kelompokUsaha);
     bodyFormData.append('kelompokUsaha', formData.kelompokUsaha);
     bodyFormData.append('jenisBarangJasa', formData.jenisBarangJasa);
     bodyFormData.append('alamat', formData.alamat);
     bodyFormData.append('rtRw', formData.rtRw);
-    bodyFormData.append('rw', formData.rw);
+    bodyFormData.append('rw', extractedRw);
     bodyFormData.append('kontak', formData.kontak);
     bodyFormData.append('linkGmaps', formData.linkGmaps);
     bodyFormData.append('deskripsi', formData.deskripsi);
@@ -142,7 +169,7 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
       await onEdit(editingUmkm._id, bodyFormData);
     } catch (error) {
       console.error('Error saat update UMKM:', error);
-      alert('Gagal memperbarui data UMKM!');
+      toast.error('Gagal memperbarui data UMKM!');
     } finally {
       setIsSubmitting(false);
     }
@@ -169,9 +196,12 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
           
           {/* FOTO UTAMA */}
           <div>
-            <label className="block font-bold text-sky-950 mb-1 flex items-center gap-1">
-              <ImageIcon className="w-3.5 h-3.5 text-sky-500" />
-              <span>Foto Utama Tempat Usaha</span>
+            <label className="block font-bold text-sky-950 mb-1 flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <ImageIcon className="w-3.5 h-3.5 text-sky-500" />
+                <span>Foto Utama Tempat Usaha</span>
+              </span>
+              <span className="text-[10px] text-sky-500 font-normal">(Maks. 2 MB)</span>
             </label>
             
             {imagePreview && (
@@ -192,6 +222,7 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
                 <div className="flex flex-col items-center justify-center">
                   <Upload className="w-4 h-4 text-sky-500 mb-0.5" />
                   <p className="text-[11px] text-sky-800 font-semibold">Ganti Foto Utama Tempat Usaha</p>
+                  <p className="text-[9px] text-sky-500">Maksimal 2 MB</p>
                 </div>
                 <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
               </label>
@@ -200,9 +231,12 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
 
           {/* GALERI FOTO */}
           <div>
-            <label className="block font-bold text-sky-950 mb-1 flex items-center gap-1">
-              <Images className="w-3.5 h-3.5 text-sky-500" />
-              <span>Galeri Foto Produk / Suasana</span>
+            <label className="block font-bold text-sky-950 mb-1 flex items-center justify-between">
+              <span className="flex items-center gap-1">
+                <Images className="w-3.5 h-3.5 text-sky-500" />
+                <span>Galeri Foto Produk / Suasana</span>
+              </span>
+              <span className="text-[10px] text-sky-500 font-normal">(Maks. 2 MB / file)</span>
             </label>
 
             {/* Foto Galeri Lama & Baru */}
@@ -240,6 +274,7 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
                 <div className="flex flex-col items-center justify-center">
                   <Upload className="w-4 h-4 text-sky-500 mb-0.5" />
                   <p className="text-[11px] text-sky-800 font-semibold">Tambah Foto Galeri Produk Baru</p>
+                  <p className="text-[9px] text-sky-500">Maksimal 2 MB per foto</p>
                 </div>
                 <input type="file" accept="image/*" multiple onChange={handleGaleriChange} className="hidden" />
               </label>
@@ -296,7 +331,7 @@ export default function EditUmkmModal({ editingUmkm, setEditingUmkm, onEdit }) {
               <label className="block font-bold text-sky-950 mb-1">Kelompok Usaha</label>
               <select
                 value={formData.kelompokUsaha}
-                onChange={e => setFormData({ ...formData, kelompokUsaha: e.target.value })}
+                onChange={e => setFormData({ ...formData, kelompokUsaha: e.target.value, kategori: e.target.value })}
                 className="w-full px-3.5 py-2.5 bg-sky-50/30 border border-sky-200/80 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-300 font-medium cursor-pointer"
               >
                 <option value="KULINER">KULINER</option>
