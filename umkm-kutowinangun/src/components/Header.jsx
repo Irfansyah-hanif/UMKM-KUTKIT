@@ -1,5 +1,6 @@
 import React from 'react';
 import { Home, LayoutGrid, TableProperties, GraduationCap } from 'lucide-react';
+import KutkitLogo from './KutkitLogo';
 
 export default function Header({ activePage, setActivePage, setIsAddModalOpen, isAdmin, setIsAdminModalOpen, handleAdminLogout }) {
   const navItems = [
@@ -13,14 +14,19 @@ export default function Header({ activePage, setActivePage, setIsAddModalOpen, i
     <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-sky-100 py-3 transition-all print:hidden">
       <div className="w-full px-4 sm:px-8 lg:px-12 flex items-center justify-between gap-6">
         
-        {/* Brand / Title (Kiri) */}
-        <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => setActivePage('home')}>
-          <div className="w-10 h-10 rounded-2xl bg-sky-500 text-white flex items-center justify-center font-black text-lg shadow-md shadow-sky-200">
-            K
-          </div>
-          <div>
-            <h1 className="text-sm font-black text-sky-950 tracking-tight">Kutowinangun Kidul</h1>
-            <p className="text-[10px] text-sky-600 font-bold uppercase tracking-wider">Katalog UMKM 2026</p>
+        {/* Brand / Logo Diperbesar (Kiri) */}
+        <div 
+          className="flex items-center gap-3.5 cursor-pointer shrink-0 group" 
+          onClick={() => setActivePage('home')}
+        >
+          <KutkitLogo className="w-12 h-12 sm:w-14 sm:h-14 shadow-lg shadow-sky-200/70 group-hover:scale-105 transition-transform" />
+          <div className="flex flex-col justify-center">
+            <h1 className="text-base sm:text-lg font-black text-sky-950 tracking-tight leading-tight group-hover:text-sky-600 transition-colors">
+              Kutowinangun Kidul
+            </h1>
+            <p className="text-[11px] sm:text-xs text-sky-600 font-bold uppercase tracking-wider">
+              Katalog UMKM 2026
+            </p>
           </div>
         </div>
 
