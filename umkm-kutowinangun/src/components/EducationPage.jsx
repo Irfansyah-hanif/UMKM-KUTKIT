@@ -78,7 +78,7 @@ export default function EducationPage() {
         </p>
       </div>
 
-      {/* MODUL UTAMA: PENGELOLAAN MANAJEMEN KEUANGAN BUKUWARUNG */}
+      {/* MODUL UTAMA: MINI BOOK MANAJEMEN KEUANGAN UMKM */}
       <div className="bg-gradient-to-br from-sky-600 via-sky-500 to-sky-700 rounded-3xl p-6 sm:p-8 text-white shadow-md relative overflow-hidden border border-sky-400/30">
         <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none" />
         
@@ -89,16 +89,16 @@ export default function EducationPage() {
           </div>
 
           <h3 className="text-lg sm:text-xl font-black leading-snug">
-            EDUKASI PENGELOLAAN MANAJEMEN KEUANGAN SEDERHANA BERBASIS APLIKASI "BUKU WARUNG" BAGI UMKM.
+            MINI BOOK MANAJEMEN KEUANGAN UMKM
           </h3>
 
           <p className="text-xs sm:text-sm text-sky-50 leading-relaxed font-medium">
-            Pengelolaan arus kas dan pencatatan transaksi merupakan fondasi utama keberlanjutan usaha mikro. Modul ini berisi panduan praktis penggunaan aplikasi <strong>BukuWarung</strong> untuk membantu pelaku UMKM mencatat penjualan, pengeluaran, utang-piutang, serta menyusun laporan keuangan harian secara mudah, akurat, dan digital langsung dari smartphone.
+            Mini book karya Tim KKN II Universitas Diponegoro ini merupakan panduan praktis manajemen keuangan bagi pelaku UMKM untuk beralih ke digital melalui penerapan konsep POAC (Perencanaan, Pengorganisasian, Pelaksanaan, Pengawasan). Buku ini memberikan panduan langkah-demi-langkah mengenai dasar-dasar pengelolaan keuangan usaha, sekaligus memanfaatkan aplikasi BukuWarung secara gratis dan aman untuk pencatatan transaksi, kelola stok, hingga pembayaran non-tunai.
           </p>
 
           <div className="pt-2">
             <a
-              href="https://drive.google.com/file/d/1mpcoPKHlrVxzr-32EkWGi4eN0Vpn7n9M/view?usp=drive_link"
+              href="https://drive.google.com/file/d/1OqnYHLURBgFQ_LGyZLIzVyqRTc7sZcG9/view?usp=drive_link"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-white text-sky-900 hover:bg-sky-50 font-black text-xs sm:text-sm px-5 py-3 rounded-2xl shadow-lg transition-all transform hover:scale-105 active:scale-95 group cursor-pointer"
@@ -233,7 +233,7 @@ export default function EducationPage() {
                   Reset
                 </button>
 
-                {/* Tombol Teks Kembali Menggantikan Tombol Silang */}
+                {/* Tombol Teks Kembali */}
                 <button
                   onClick={handleClosePreview}
                   className="px-3 py-1 bg-rose-500/80 hover:bg-rose-600 text-white text-xs font-black rounded-full transition-colors cursor-pointer ml-1 border border-rose-400/30 shadow-xs"
